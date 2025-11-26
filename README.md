@@ -174,7 +174,10 @@ The server provides 7 resource-based tools, each with multiple actions:
 | Action | Parameters | Description |
 |--------|------------|-------------|
 | `generate` | `avatar_id`, `input_text`, `voice_id`, `title` (optional) | Create a new avatar video |
+| `generate_iv` | `image_key`, `script`, `voice_id`, `video_title`, `audio_url` (opt), `audio_asset_id` (opt), `custom_motion_prompt` (opt), `enhance_custom_motion_prompt` (opt) | Create Avatar IV video from photo with AI motion |
 | `status` | `video_id` | Check video processing status |
+
+**Avatar IV Videos**: Use `generate_iv` to create photorealistic avatar videos from a single photo. First upload a photo using `assets(action="upload")` to get an `image_key`, then generate the video with AI-powered motion and expressions.
 
 #### `templates` - Template Management (V3 API)
 
@@ -223,6 +226,17 @@ avatars(action="get", avatar_id="avatar_123")
 
 # Generate a video
 videos(action="generate", avatar_id="...", input_text="Hello!", voice_id="...")
+
+# Upload a photo and generate Avatar IV video
+assets(action="upload", file_path="/path/to/photo.jpg")  # Returns image_key
+videos(
+    action="generate_iv",
+    image_key="...",  # From upload
+    video_title="My Avatar IV Video",
+    script="Hello, this is my AI avatar speaking!",
+    voice_id="...",
+    custom_motion_prompt="Speak confidently with natural gestures"
+)
 
 # List folders
 folders(action="list")

@@ -20,6 +20,8 @@ from .models import (
     AssetUploadResponse,
     AvatarDetailsResponse,
     AvatarGroupListResponse,
+    AvatarIVVideoRequest,
+    AvatarIVVideoResponse,
     AvatarsInGroupResponse,
     AvatarsV2Response,
     FolderCreateResponse,
@@ -31,6 +33,7 @@ from .models import (
     MCPAssetUploadResponse,
     MCPAvatarDetailsResponse,
     MCPAvatarGroupResponse,
+    MCPAvatarIVVideoResponse,
     MCPAvatarsInGroupResponse,
     MCPFolderCreateResponse,
     MCPFolderListResponse,
@@ -543,6 +546,50 @@ class HeyGenApiClient:
             )
         except Exception as e:
             return MCPVideoStatusResponse(error=f"An unexpected error occurred: {e}")
+
+    async def generate_avatar_iv_video(
+        self, request: AvatarIVVideoRequest
+    ) -> MCPAvatarIVVideoResponse:
+        """Generate an Avatar IV video using advanced photorealistic avatar technology.
+
+        Avatar IV uses AI-powered motion and expressions to create videos from photos.
+
+        Args:
+            request: Avatar IV video generation request parameters including:
+                - image_key: Asset ID of the uploaded photo
+                - video_title: Title for the generated video
+                - script: Text the avatar will speak
+                - voice_id: Voice ID for the avatar
+                - audio_url: Optional custom audio URL
+                - audio_asset_id: Optional HeyGen asset ID for audio
+                - custom_motion_prompt: Optional motion guidance
+                - enhance_custom_motion_prompt: Optional AI motion enhancement
+
+        Returns:
+            MCPAvatarIVVideoResponse with video_id for status tracking.
+        """
+
+        async def api_call():
+            # Build request data, excluding None values
+            request_data = {
+                k: v for k, v in request.model_dump().items() if v is not None
+            }
+            return await self._make_request(
+                "video/av4/generate",
+                method="POST",
+                data=request_data,
+            )
+
+        def transform_data(data, mcp_class):
+            return mcp_class(video_id=data.video_id)
+
+        return await self._handle_api_request(
+            api_call=api_call,
+            response_model_class=AvatarIVVideoResponse,
+            mcp_response_class=MCPAvatarIVVideoResponse,
+            error_msg="Failed to generate Avatar IV video.",
+            transform_func=transform_data,
+        )
 
     # ==================== Templates ====================
 

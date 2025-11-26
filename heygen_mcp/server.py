@@ -11,6 +11,7 @@ from mcp.server.fastmcp import FastMCP
 
 from heygen_mcp.client import HeyGenApiClient
 from heygen_mcp.models import (
+    AvatarIVVideoRequest,
     Character,
     Dimension,
     MCPAssetDeleteResponse,
@@ -18,6 +19,7 @@ from heygen_mcp.models import (
     MCPAssetUploadResponse,
     MCPAvatarDetailsResponse,
     MCPAvatarGroupResponse,
+    MCPAvatarIVVideoResponse,
     MCPAvatarsInGroupResponse,
     MCPFolderCreateResponse,
     MCPFolderListResponse,
@@ -211,18 +213,29 @@ async def avatars(
         "Manage HeyGen video generation. Actions: "
         "'generate' - create a new avatar video (requires avatar_id, input_text, "
         "voice_id; optional title); "
+        "'generate_iv' - create Avatar IV video from photo with AI motion "
+        "(requires image_key, script, voice_id, video_title; optional audio_url, "
+        "audio_asset_id, custom_motion_prompt, enhance_custom_motion_prompt); "
         "'status' - check video status (requires video_id). "
         "Note: Video processing may take minutes to hours."
     ),
 )
 async def videos(
-    action: Literal["generate", "status"],
+    action: Literal["generate", "generate_iv", "status"],
     video_id: str | None = None,
     avatar_id: str | None = None,
     input_text: str | None = None,
     voice_id: str | None = None,
     title: str = "",
-) -> MCPVideoGenerateResponse | MCPVideoStatusResponse:
+    # Avatar IV specific parameters
+    image_key: str | None = None,
+    script: str | None = None,
+    video_title: str | None = None,
+    audio_url: str | None = None,
+    audio_asset_id: str | None = None,
+    custom_motion_prompt: str | None = None,
+    enhance_custom_motion_prompt: bool | None = None,
+) -> MCPVideoGenerateResponse | MCPVideoStatusResponse | MCPAvatarIVVideoResponse:
     """Manage video generation and status."""
     logger.info(f"videos action={action} video_id={video_id} avatar_id={avatar_id}")
     try:
@@ -254,6 +267,37 @@ async def videos(
             )
             return await client.generate_avatar_video(request)
 
+        elif action == "generate_iv":
+            if not image_key:
+                return MCPAvatarIVVideoResponse(
+                    error="image_key is required for 'generate_iv' action "
+                    "(upload photo first using assets tool)"
+                )
+            if not script:
+                return MCPAvatarIVVideoResponse(
+                    error="script is required for 'generate_iv' action"
+                )
+            if not voice_id:
+                return MCPAvatarIVVideoResponse(
+                    error="voice_id is required for 'generate_iv' action"
+                )
+            if not video_title:
+                return MCPAvatarIVVideoResponse(
+                    error="video_title is required for 'generate_iv' action"
+                )
+
+            request = AvatarIVVideoRequest(
+                image_key=image_key,
+                video_title=video_title,
+                script=script,
+                voice_id=voice_id,
+                audio_url=audio_url,
+                audio_asset_id=audio_asset_id,
+                custom_motion_prompt=custom_motion_prompt,
+                enhance_custom_motion_prompt=enhance_custom_motion_prompt,
+            )
+            return await client.generate_avatar_iv_video(request)
+
         elif action == "status":
             if not video_id:
                 return MCPVideoStatusResponse(
@@ -268,6 +312,8 @@ async def videos(
         logger.error(f"videos action={action} error: {e}")
         if action == "status":
             return MCPVideoStatusResponse(error=str(e))
+        if action == "generate_iv":
+            return MCPAvatarIVVideoResponse(error=str(e))
         return MCPVideoGenerateResponse(error=str(e))
 
 

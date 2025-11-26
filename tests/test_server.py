@@ -179,6 +179,45 @@ class TestVideosTool:
         assert result.error is not None
         assert "voice_id is required" in result.error
 
+    @pytest.mark.asyncio
+    async def test_videos_generate_iv_action_missing_image_key(self):
+        """Test videos(action='generate_iv') without image_key returns error."""
+        result = await videos(action="generate_iv")
+
+        assert result.error is not None
+        assert "image_key is required" in result.error
+
+    @pytest.mark.asyncio
+    async def test_videos_generate_iv_action_missing_script(self):
+        """Test videos(action='generate_iv') without script returns error."""
+        result = await videos(action="generate_iv", image_key="test-image")
+
+        assert result.error is not None
+        assert "script is required" in result.error
+
+    @pytest.mark.asyncio
+    async def test_videos_generate_iv_action_missing_voice_id(self):
+        """Test videos(action='generate_iv') without voice_id returns error."""
+        result = await videos(
+            action="generate_iv", image_key="test-image", script="Hello world"
+        )
+
+        assert result.error is not None
+        assert "voice_id is required" in result.error
+
+    @pytest.mark.asyncio
+    async def test_videos_generate_iv_action_missing_video_title(self):
+        """Test videos(action='generate_iv') without video_title returns error."""
+        result = await videos(
+            action="generate_iv",
+            image_key="test-image",
+            script="Hello world",
+            voice_id="test-voice",
+        )
+
+        assert result.error is not None
+        assert "video_title is required" in result.error
+
 
 class TestTemplatesTool:
     """Smoke tests for the templates resource tool."""

@@ -108,3 +108,52 @@ class MCPVideoStatusResponse(BaseHeyGenResponse):
     thumbnail_url: Optional[str] = None
     created_at: Optional[int] = None
     error_details: Optional[Dict[str, Any]] = None
+
+
+# ==================== Avatar IV Video Models ====================
+
+
+class AvatarIVVideoRequest(BaseModel):
+    """Request model for Avatar IV video generation.
+
+    Avatar IV uses advanced photorealistic avatar technology to generate
+    AI-powered videos from a photo with motion and expressions.
+    """
+
+    image_key: str = Field(
+        ..., description="Asset ID of the uploaded photo (from upload_asset)"
+    )
+    video_title: str = Field(..., description="Title for the generated video")
+    script: str = Field(..., description="Text that the avatar will speak")
+    voice_id: str = Field(..., description="Voice ID for the avatar")
+    audio_url: Optional[str] = Field(
+        default=None, description="URL of custom audio file (optional)"
+    )
+    audio_asset_id: Optional[str] = Field(
+        default=None, description="HeyGen asset ID of audio file (optional)"
+    )
+    custom_motion_prompt: Optional[str] = Field(
+        default=None,
+        description="Custom motion prompt to guide avatar gestures/expressions",
+    )
+    enhance_custom_motion_prompt: Optional[bool] = Field(
+        default=None, description="Let AI refine the custom motion prompt"
+    )
+
+
+class AvatarIVVideoResponseData(BaseModel):
+    """Data returned from Avatar IV video generation."""
+
+    video_id: str
+
+
+class AvatarIVVideoResponse(BaseHeyGenResponse):
+    """API response for Avatar IV video generation."""
+
+    data: Optional[AvatarIVVideoResponseData] = None
+
+
+class MCPAvatarIVVideoResponse(BaseHeyGenResponse):
+    """MCP response wrapper for Avatar IV video generation."""
+
+    video_id: Optional[str] = None

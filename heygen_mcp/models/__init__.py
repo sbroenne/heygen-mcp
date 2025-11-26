@@ -70,8 +70,12 @@ from .user import (
     UserInfoResponse,
 )
 from .video import (
+    AvatarIVVideoRequest,
+    AvatarIVVideoResponse,
+    AvatarIVVideoResponseData,
     Character,
     Dimension,
+    MCPAvatarIVVideoResponse,
     MCPVideoGenerateResponse,
     MCPVideoStatusResponse,
     VideoGenerateRequest,
@@ -137,6 +141,10 @@ __all__ = [
     "AvatarGroupListResponse",
     "MCPAvatarGroupResponse",
     # Video
+    "AvatarIVVideoRequest",
+    "AvatarIVVideoResponse",
+    "AvatarIVVideoResponseData",
+    "MCPAvatarIVVideoResponse",
     "Character",
     "Voice",
     "VideoInput",
