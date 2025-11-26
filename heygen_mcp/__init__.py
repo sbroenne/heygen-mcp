@@ -2,7 +2,7 @@
 
 __version__ = "0.0.3"
 
-from heygen_mcp.api_client import HeyGenApiClient
+from heygen_mcp.client import HeyGenApiClient
 from heygen_mcp.server import main, mcp
 
 __all__ = ["HeyGenApiClient", "mcp", "main"]

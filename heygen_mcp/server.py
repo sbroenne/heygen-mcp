@@ -1,4 +1,4 @@
-"""HeyGen MCP server module for providing MCP tools for the HeyGen API."""
+"""HeyGen MCP server module providing MCP tools for the HeyGen API."""
 
 import argparse
 import os
@@ -7,13 +7,19 @@ import sys
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
-from heygen_mcp.api_client import (
+from heygen_mcp.client import HeyGenApiClient
+from heygen_mcp.models import (
     Character,
     Dimension,
-    HeyGenApiClient,
+    MCPAvatarDetailsResponse,
     MCPAvatarGroupResponse,
     MCPAvatarsInGroupResponse,
     MCPGetCreditsResponse,
+    MCPListAvatarsResponse,
+    MCPListTemplatesResponse,
+    MCPTemplateDetailsResponse,
+    MCPTemplateVideoGenerateResponse,
+    MCPUserInfoResponse,
     MCPVideoGenerateResponse,
     MCPVideoStatusResponse,
     MCPVoicesResponse,
@@ -27,32 +33,32 @@ load_dotenv()
 
 # Create MCP server instance
 mcp = FastMCP("HeyGen MCP")
-api_client = None
+_api_client: HeyGenApiClient | None = None
 
 
-# Function to get or create API client
 async def get_api_client() -> HeyGenApiClient:
-    """Get the API client, creating it if necessary."""
-    global api_client
+    """Get or create the API client singleton.
 
-    # If we already have a client, return it
-    if api_client is not None:
-        return api_client
+    Returns:
+        HeyGenApiClient instance.
 
-    # Otherwise, get the API key and create a new client
+    Raises:
+        ValueError: If HEYGEN_API_KEY environment variable is not set.
+    """
+    global _api_client
+
+    if _api_client is not None:
+        return _api_client
+
     api_key = os.getenv("HEYGEN_API_KEY")
-
     if not api_key:
         raise ValueError("HEYGEN_API_KEY environment variable not set.")
 
-    # Create and store the client
-    api_client = HeyGenApiClient(api_key)
-    return api_client
+    _api_client = HeyGenApiClient(api_key)
+    return _api_client
 
 
-########################
-# MCP Tool Definitions #
-########################
+# ==================== Credits & User Tools ====================
 
 
 @mcp.tool(
@@ -158,6 +164,113 @@ async def get_avatar_video_status(video_id: str) -> MCPVideoStatusResponse:
         return await client.get_video_status(video_id)
     except Exception as e:
         return MCPVideoStatusResponse(error=str(e))
+
+
+@mcp.tool(
+    name="list_avatars",
+    description=(
+        "Retrieves a list of all available avatars and talking photos (Photo Avatars) "
+        "from the HeyGen API. This returns avatars independently of their groups."
+    ),
+)
+async def list_avatars() -> MCPListAvatarsResponse:
+    """List all available avatars via HeyGen API."""
+    try:
+        client = await get_api_client()
+        return await client.list_avatars()
+    except Exception as e:
+        return MCPListAvatarsResponse(error=str(e))
+
+
+@mcp.tool(
+    name="get_avatar_details",
+    description=(
+        "Retrieves detailed information about a specific avatar by its ID. "
+        "Includes poses and voice information if available."
+    ),
+)
+async def get_avatar_details(avatar_id: str) -> MCPAvatarDetailsResponse:
+    """Get detailed information about a specific avatar."""
+    try:
+        client = await get_api_client()
+        return await client.get_avatar_details(avatar_id)
+    except Exception as e:
+        return MCPAvatarDetailsResponse(error=str(e))
+
+
+@mcp.tool(
+    name="list_templates",
+    description=(
+        "Retrieves a list of video templates created under your HeyGen account. "
+        "Default templates provided by the platform are not included."
+    ),
+)
+async def list_templates() -> MCPListTemplatesResponse:
+    """List all templates via HeyGen API."""
+    try:
+        client = await get_api_client()
+        return await client.list_templates()
+    except Exception as e:
+        return MCPListTemplatesResponse(error=str(e))
+
+
+@mcp.tool(
+    name="get_user_info",
+    description="Retrieves profile information of the currently authenticated HeyGen user.",
+)
+async def get_user_info() -> MCPUserInfoResponse:
+    """Get current user's profile information."""
+    try:
+        client = await get_api_client()
+        return await client.get_user_info()
+    except Exception as e:
+        return MCPUserInfoResponse(error=str(e))
+
+
+@mcp.tool(
+    name="get_template_details",
+    description=(
+        "Retrieves detailed information about a specific template by its ID, "
+        "including all variables available for replacement. For templates created "
+        "in the New AI Studio, scenes with their variables are also returned."
+    ),
+)
+async def get_template_details(template_id: str) -> MCPTemplateDetailsResponse:
+    """Get detailed information about a specific template including variables."""
+    try:
+        client = await get_api_client()
+        return await client.get_template_details(template_id)
+    except Exception as e:
+        return MCPTemplateDetailsResponse(error=str(e))
+
+
+@mcp.tool(
+    name="generate_video_from_template",
+    description=(
+        "Generates a video based on the specified template with variable values "
+        "for replacement. Use get_template_details first to see available variables. "
+        "Returns a video_id that can be used with get_avatar_video_status to check progress."
+    ),
+)
+async def generate_video_from_template(
+    template_id: str,
+    variables: dict | None = None,
+    title: str | None = None,
+    test: bool = False,
+    caption: bool = False,
+) -> MCPTemplateVideoGenerateResponse:
+    """Generate a video from a template with variable replacements."""
+    try:
+        client = await get_api_client()
+        return await client.generate_video_from_template(
+            template_id=template_id,
+            variables=variables,
+            title=title,
+            test=test,
+            caption=caption,
+        )
+    except Exception as e:
+        return MCPTemplateVideoGenerateResponse(error=str(e))
 
 
 def parse_args():
