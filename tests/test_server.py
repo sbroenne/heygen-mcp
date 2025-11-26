@@ -243,3 +243,68 @@ class TestAssetsTool:
 
         assert result.error is not None
         assert "asset_id is required" in result.error
+
+
+class TestFoldersTool:
+    """Smoke tests for the folders resource tool."""
+
+    @pytest.mark.asyncio
+    async def test_folders_list_action(self):
+        """Test folders(action='list') returns folders."""
+        from heygen_mcp.server import folders
+
+        result = await folders(action="list")
+
+        assert result.error is None, f"Tool returned error: {result.error}"
+        folder_count = result.total if result.total else 0
+        print(f"\n  Found {folder_count} folders")
+
+    @pytest.mark.asyncio
+    async def test_folders_create_action_missing_name(self):
+        """Test folders(action='create') without name returns error."""
+        from heygen_mcp.server import folders
+
+        result = await folders(action="create")
+
+        assert result.error is not None
+        assert "name is required" in result.error
+
+    @pytest.mark.asyncio
+    async def test_folders_rename_action_missing_id(self):
+        """Test folders(action='rename') without folder_id returns error."""
+        from heygen_mcp.server import folders
+
+        result = await folders(action="rename", name="New Name")
+
+        assert result.error is not None
+        assert "folder_id is required" in result.error
+
+    @pytest.mark.asyncio
+    async def test_folders_rename_action_missing_name(self):
+        """Test folders(action='rename') without name returns error."""
+        from heygen_mcp.server import folders
+
+        result = await folders(action="rename", folder_id="some-id")
+
+        assert result.error is not None
+        assert "name is required" in result.error
+
+    @pytest.mark.asyncio
+    async def test_folders_trash_action_missing_id(self):
+        """Test folders(action='trash') without folder_id returns error."""
+        from heygen_mcp.server import folders
+
+        result = await folders(action="trash")
+
+        assert result.error is not None
+        assert "folder_id is required" in result.error
+
+    @pytest.mark.asyncio
+    async def test_folders_restore_action_missing_id(self):
+        """Test folders(action='restore') without folder_id returns error."""
+        from heygen_mcp.server import folders
+
+        result = await folders(action="restore")
+
+        assert result.error is not None
+        assert "folder_id is required" in result.error

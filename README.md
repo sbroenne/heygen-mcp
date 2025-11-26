@@ -145,7 +145,7 @@ For VS Code, use `servers` instead of `mcpServers`.
 
 ### Available MCP Tools
 
-The server provides 6 resource-based tools, each with multiple actions:
+The server provides 7 resource-based tools, each with multiple actions:
 
 #### `user` - User Account Management
 
@@ -176,13 +176,18 @@ The server provides 6 resource-based tools, each with multiple actions:
 | `generate` | `avatar_id`, `input_text`, `voice_id`, `title` (optional) | Create a new avatar video |
 | `status` | `video_id` | Check video processing status |
 
-#### `templates` - Template Management
+#### `templates` - Template Management (V3 API)
 
 | Action | Parameters | Description |
 |--------|------------|-------------|
 | `list` | - | Get all templates in your account |
-| `get` | `template_id` | Get template details including variables |
+| `get` | `template_id` | Get template details including **dynamic/custom variables** and scenes |
 | `generate` | `template_id`, `variables` (optional), `title`, `test`, `caption` | Create video from template |
+
+The `get` action uses the V3 template API which returns detailed variable information for each scene, including:
+- **Text variables**: Customizable text content with content property
+- **Avatar variables**: Avatar selection with avatar_id, voice_id, and script
+- **Image/Video/Audio variables**: Media replacement with url, asset_id, and fit properties
 
 #### `assets` - Asset Management
 
@@ -191,6 +196,18 @@ The server provides 6 resource-based tools, each with multiple actions:
 | `list` | - | Get all assets (images, videos, audios) |
 | `upload` | `file_path` | Upload a media file, returns asset_id |
 | `delete` | `asset_id` | Remove an asset |
+
+#### `folders` - Folder Management
+
+| Action | Parameters | Description |
+|--------|------------|-------------|
+| `list` | - | Get all folders in your account |
+| `create` | `name`, `parent_id` (optional), `project_type` (optional) | Create a new folder |
+| `rename` | `folder_id`, `name` | Rename an existing folder |
+| `trash` | `folder_id` | Move a folder to trash |
+| `restore` | `folder_id` | Restore a folder from trash |
+
+**Project types for folders:** `avatar_video`, `personalized_video`, `template`, `talking_photo`, `photo_avatar`
 
 **Example Usage:**
 
@@ -206,6 +223,28 @@ avatars(action="get", avatar_id="avatar_123")
 
 # Generate a video
 videos(action="generate", avatar_id="...", input_text="Hello!", voice_id="...")
+
+# List folders
+folders(action="list")
+
+# Create a folder for templates
+folders(action="create", name="My Templates", project_type="template")
+
+# Get template details with V3 API (includes variables per scene)
+templates(action="get", template_id="template_123")
+
+# Generate video from template with variable replacements
+templates(
+    action="generate",
+    template_id="template_123",
+    variables={
+        "first_name": {
+            "name": "first_name",
+            "type": "text",
+            "properties": {"content": "John"}
+        }
+    }
+)
 ```
 
 ## Development
@@ -264,7 +303,8 @@ uv run pytest tests/ -v -k "not video_generation"
 ## Roadmap
 
 - [x] Tests (integration tests + MCP server smoke tests)
-- [x] Template API Support
+- [x] Template API Support (V3 with dynamic/custom variables)
+- [x] Folder Management API Support
 - [x] CI/CD (GitHub Actions + PyPI release)
 - [ ] Photo Avatar APIs Support
 - [ ] SSE And Remote MCP Server with OAuth Flow

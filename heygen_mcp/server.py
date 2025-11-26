@@ -19,6 +19,11 @@ from heygen_mcp.models import (
     MCPAvatarDetailsResponse,
     MCPAvatarGroupResponse,
     MCPAvatarsInGroupResponse,
+    MCPFolderCreateResponse,
+    MCPFolderListResponse,
+    MCPFolderRestoreResponse,
+    MCPFolderTrashResponse,
+    MCPFolderUpdateResponse,
     MCPGetCreditsResponse,
     MCPListAvatarsResponse,
     MCPListTemplatesResponse,
@@ -377,6 +382,91 @@ async def assets(
         if action == "delete":
             return MCPAssetDeleteResponse(error=str(e), success=False)
         return MCPAssetListResponse(error=str(e))
+
+
+# ==================== Folders Resource ====================
+
+
+@mcp.tool(
+    name="folders",
+    description=(
+        "Manage HeyGen folders for organizing videos and assets. Actions: "
+        "'list' - get all folders in your account; "
+        "'create' - create a new folder (requires name); "
+        "'rename' - rename an existing folder (requires folder_id and name); "
+        "'trash' - move a folder to trash (requires folder_id); "
+        "'restore' - restore a folder from trash (requires folder_id)."
+    ),
+)
+async def folders(
+    action: Literal["list", "create", "rename", "trash", "restore"],
+    folder_id: str | None = None,
+    name: str | None = None,
+) -> (
+    MCPFolderListResponse
+    | MCPFolderCreateResponse
+    | MCPFolderUpdateResponse
+    | MCPFolderTrashResponse
+    | MCPFolderRestoreResponse
+):
+    """Manage folder resources for organizing content."""
+    logger.info(f"folders action={action} folder_id={folder_id} name={name}")
+    try:
+        client = await get_api_client()
+
+        if action == "list":
+            return await client.list_folders()
+
+        elif action == "create":
+            if not name:
+                return MCPFolderCreateResponse(
+                    error="name is required for 'create' action"
+                )
+            return await client.create_folder(name)
+
+        elif action == "rename":
+            if not folder_id:
+                return MCPFolderUpdateResponse(
+                    error="folder_id is required for 'rename' action",
+                    success=False,
+                )
+            if not name:
+                return MCPFolderUpdateResponse(
+                    error="name is required for 'rename' action",
+                    success=False,
+                )
+            return await client.update_folder(folder_id, name)
+
+        elif action == "trash":
+            if not folder_id:
+                return MCPFolderTrashResponse(
+                    error="folder_id is required for 'trash' action",
+                    success=False,
+                )
+            return await client.trash_folder(folder_id)
+
+        elif action == "restore":
+            if not folder_id:
+                return MCPFolderRestoreResponse(
+                    error="folder_id is required for 'restore' action",
+                    success=False,
+                )
+            return await client.restore_folder(folder_id)
+
+        else:
+            return MCPFolderListResponse(error=f"Unknown action: {action}")
+
+    except Exception as e:
+        logger.error(f"folders action={action} error: {e}")
+        if action == "create":
+            return MCPFolderCreateResponse(error=str(e))
+        if action == "rename":
+            return MCPFolderUpdateResponse(error=str(e), success=False)
+        if action == "trash":
+            return MCPFolderTrashResponse(error=str(e), success=False)
+        if action == "restore":
+            return MCPFolderRestoreResponse(error=str(e), success=False)
+        return MCPFolderListResponse(error=str(e))
 
 
 # ==================== CLI ====================

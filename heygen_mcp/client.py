@@ -22,12 +22,21 @@ from .models import (
     AvatarGroupListResponse,
     AvatarsInGroupResponse,
     AvatarsV2Response,
+    FolderCreateResponse,
+    FolderListResponse,
+    FolderTrashRestoreResponse,
+    FolderUpdateResponse,
     MCPAssetDeleteResponse,
     MCPAssetListResponse,
     MCPAssetUploadResponse,
     MCPAvatarDetailsResponse,
     MCPAvatarGroupResponse,
     MCPAvatarsInGroupResponse,
+    MCPFolderCreateResponse,
+    MCPFolderListResponse,
+    MCPFolderRestoreResponse,
+    MCPFolderTrashResponse,
+    MCPFolderUpdateResponse,
     MCPGetCreditsResponse,
     MCPListAvatarsResponse,
     MCPListTemplatesResponse,
@@ -764,5 +773,176 @@ class HeyGenApiClient:
         except Exception as e:
             return MCPAssetDeleteResponse(
                 error=f"Error deleting asset: {e}",
+                success=False,
+            )
+
+    # ==================== Folder Methods ====================
+
+    async def list_folders(self) -> MCPFolderListResponse:
+        """List all folders in the HeyGen account.
+
+        Returns:
+            MCPFolderListResponse with list of folders.
+        """
+
+        async def api_call():
+            return await self._make_request("../v1/folders")
+
+        def transform_data(data, mcp_class):
+            return mcp_class(
+                folders=data.folders if data.folders else [],
+                total=data.total,
+                token=data.token,
+            )
+
+        return await self._handle_api_request(
+            api_call=api_call,
+            response_model_class=FolderListResponse,
+            mcp_response_class=MCPFolderListResponse,
+            error_msg="Failed to list folders.",
+            transform_func=transform_data,
+        )
+
+    async def create_folder(self, name: str) -> MCPFolderCreateResponse:
+        """Create a new folder.
+
+        Args:
+            name: The name of the folder to create.
+
+        Returns:
+            MCPFolderCreateResponse with folder_id.
+        """
+
+        async def api_call():
+            return await self._make_request(
+                "../v1/folders/create",
+                method="POST",
+                data={"name": name},
+            )
+
+        try:
+            result = await api_call()
+            parsed = FolderCreateResponse.model_validate(result)
+
+            if parsed.error:
+                return MCPFolderCreateResponse(error=parsed.error)
+
+            if parsed.data:
+                return MCPFolderCreateResponse(folder_id=parsed.data.id)
+
+            return MCPFolderCreateResponse(error="Failed to create folder.")
+
+        except httpx.HTTPStatusError as e:
+            return MCPFolderCreateResponse(error=f"Failed to create folder: {e}")
+        except Exception as e:
+            return MCPFolderCreateResponse(error=f"Error creating folder: {e}")
+
+    async def update_folder(self, folder_id: str, name: str) -> MCPFolderUpdateResponse:
+        """Update (rename) a folder.
+
+        Args:
+            folder_id: The ID of the folder to update.
+            name: The new name for the folder.
+
+        Returns:
+            MCPFolderUpdateResponse indicating success or failure.
+        """
+
+        async def api_call():
+            return await self._make_request(
+                f"../v1/folders/{folder_id}",
+                method="POST",
+                data={"name": name},
+            )
+
+        try:
+            result = await api_call()
+            parsed = FolderUpdateResponse.model_validate(result)
+
+            if parsed.error:
+                return MCPFolderUpdateResponse(error=parsed.error, success=False)
+
+            return MCPFolderUpdateResponse(folder_id=folder_id, success=True)
+
+        except httpx.HTTPStatusError as e:
+            return MCPFolderUpdateResponse(
+                error=f"Failed to update folder: {e}",
+                success=False,
+            )
+        except Exception as e:
+            return MCPFolderUpdateResponse(
+                error=f"Error updating folder: {e}",
+                success=False,
+            )
+
+    async def trash_folder(self, folder_id: str) -> MCPFolderTrashResponse:
+        """Move a folder to trash.
+
+        Args:
+            folder_id: The ID of the folder to trash.
+
+        Returns:
+            MCPFolderTrashResponse indicating success or failure.
+        """
+
+        async def api_call():
+            return await self._make_request(
+                f"../v1/folders/{folder_id}/trash",
+                method="POST",
+            )
+
+        try:
+            result = await api_call()
+            parsed = FolderTrashRestoreResponse.model_validate(result)
+
+            if parsed.error:
+                return MCPFolderTrashResponse(error=parsed.error, success=False)
+
+            return MCPFolderTrashResponse(folder_id=folder_id, success=True)
+
+        except httpx.HTTPStatusError as e:
+            return MCPFolderTrashResponse(
+                error=f"Failed to trash folder: {e}",
+                success=False,
+            )
+        except Exception as e:
+            return MCPFolderTrashResponse(
+                error=f"Error trashing folder: {e}",
+                success=False,
+            )
+
+    async def restore_folder(self, folder_id: str) -> MCPFolderRestoreResponse:
+        """Restore a folder from trash.
+
+        Args:
+            folder_id: The ID of the folder to restore.
+
+        Returns:
+            MCPFolderRestoreResponse indicating success or failure.
+        """
+
+        async def api_call():
+            return await self._make_request(
+                f"../v1/folders/{folder_id}/restore",
+                method="POST",
+            )
+
+        try:
+            result = await api_call()
+            parsed = FolderTrashRestoreResponse.model_validate(result)
+
+            if parsed.error:
+                return MCPFolderRestoreResponse(error=parsed.error, success=False)
+
+            return MCPFolderRestoreResponse(folder_id=folder_id, success=True)
+
+        except httpx.HTTPStatusError as e:
+            return MCPFolderRestoreResponse(
+                error=f"Failed to restore folder: {e}",
+                success=False,
+            )
+        except Exception as e:
+            return MCPFolderRestoreResponse(
+                error=f"Error restoring folder: {e}",
                 success=False,
             )

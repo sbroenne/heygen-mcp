@@ -31,6 +31,19 @@ from .avatar_group import (
     MCPAvatarGroupResponse,
 )
 from .base import BaseHeyGenResponse
+from .folder import (
+    Folder,
+    FolderCreateResponse,
+    FolderListData,
+    FolderListResponse,
+    FolderTrashRestoreResponse,
+    FolderUpdateResponse,
+    MCPFolderCreateResponse,
+    MCPFolderListResponse,
+    MCPFolderRestoreResponse,
+    MCPFolderTrashResponse,
+    MCPFolderUpdateResponse,
+)
 from .template import (
     MCPListTemplatesResponse,
     MCPTemplateDetailsResponse,
@@ -89,6 +102,18 @@ __all__ = [
     "MCPAssetUploadResponse",
     "MCPAssetListResponse",
     "MCPAssetDeleteResponse",
+    # Folder
+    "Folder",
+    "FolderListData",
+    "FolderListResponse",
+    "FolderCreateResponse",
+    "FolderUpdateResponse",
+    "FolderTrashRestoreResponse",
+    "MCPFolderListResponse",
+    "MCPFolderCreateResponse",
+    "MCPFolderUpdateResponse",
+    "MCPFolderTrashResponse",
+    "MCPFolderRestoreResponse",
     # Voice
     "VoiceInfo",
     "VoicesData",
