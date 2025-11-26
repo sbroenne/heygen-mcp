@@ -766,4 +766,3 @@ class HeyGenApiClient:
                 error=f"Error deleting asset: {e}",
                 success=False,
             )
-

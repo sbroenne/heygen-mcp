@@ -101,7 +101,7 @@ class TestAvatarsInGroup:
         """Test retrieving avatars from a specific group."""
         # First get a group to use
         groups_result = await api_client.list_avatar_groups(include_public=True)
-        
+
         if not groups_result.avatar_groups or len(groups_result.avatar_groups) == 0:
             pytest.skip("No avatar groups available to test")
 
@@ -123,7 +123,7 @@ class TestAvatarsInGroup:
 
 class TestVideoGeneration:
     """Integration tests for video generation.
-    
+
     Note: These tests are marked with a special marker because they
     consume API credits. Run with: pytest -m "video_generation"
     """
@@ -132,7 +132,7 @@ class TestVideoGeneration:
     @pytest.mark.video_generation
     async def test_generate_and_check_video_status(self, api_client: HeyGenApiClient):
         """Test generating a video and checking its status.
-        
+
         WARNING: This test consumes API credits!
         """
         from heygen_mcp.models import (
@@ -242,7 +242,7 @@ class TestAvatarDetails:
         """Test retrieving details for a specific avatar."""
         # First get an avatar to use
         avatars_result = await api_client.list_avatars()
-        
+
         if not avatars_result.avatars or len(avatars_result.avatars) == 0:
             pytest.skip("No avatars available to test")
 
@@ -312,7 +312,7 @@ class TestTemplateDetails:
         """Test retrieving template details."""
         # First get a template to use
         templates_result = await api_client.list_templates()
-        
+
         if not templates_result.templates or len(templates_result.templates) == 0:
             pytest.skip("No templates available to test")
 
@@ -339,7 +339,7 @@ class TestTemplateDetails:
 
 class TestGenerateVideoFromTemplate:
     """Integration tests for generating video from template.
-    
+
     Note: These tests are marked with a special marker because they
     consume API credits. Run with: pytest -m "video_generation"
     """
@@ -348,22 +348,22 @@ class TestGenerateVideoFromTemplate:
     @pytest.mark.video_generation
     async def test_generate_video_from_template(self, api_client: HeyGenApiClient):
         """Test generating a video from a template.
-        
+
         WARNING: This test consumes API credits!
         """
         # First get a template to use
         templates_result = await api_client.list_templates()
-        
+
         if not templates_result.templates or len(templates_result.templates) == 0:
             pytest.skip("No templates available to test")
 
         template_id = templates_result.templates[0].template_id
-        
+
         # Get template details to see variables
         details_result = await api_client.get_template_details(template_id)
         if details_result.error:
             pytest.skip(f"Could not get template details: {details_result.error}")
-        
+
         # Generate video (with test mode if available)
         result = await api_client.generate_video_from_template(
             template_id=template_id,

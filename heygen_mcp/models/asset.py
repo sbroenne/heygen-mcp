@@ -12,17 +12,17 @@ class Asset(BaseModel):
 
     model_config = {"extra": "ignore"}
 
-    asset_id: str = Field(..., description="Unique identifier for the asset")
-    asset_key: Optional[str] = Field(None, description="Asset key/path")
-    url: Optional[str] = Field(None, description="URL to access the asset")
-    type: Optional[str] = Field(None, description="Asset type (image, video, audio)")
-    file_name: Optional[str] = Field(None, description="Original file name")
-    file_type: Optional[str] = Field(None, description="File MIME type")
-    size: Optional[int] = Field(None, description="File size in bytes")
-    created_at: Optional[str] = Field(None, description="Creation timestamp")
-    width: Optional[int] = Field(None, description="Width in pixels")
-    height: Optional[int] = Field(None, description="Height in pixels")
-    duration: Optional[float] = Field(None, description="Duration in seconds")
+    asset_id: Optional[str] = Field(default=None, description="Unique identifier")
+    asset_key: Optional[str] = Field(default=None, description="Asset key/path")
+    url: Optional[str] = Field(default=None, description="URL to access the asset")
+    type: Optional[str] = Field(default=None, description="Asset type")
+    file_name: Optional[str] = Field(default=None, description="Original file name")
+    file_type: Optional[str] = Field(default=None, description="File MIME type")
+    size: Optional[int] = Field(default=None, description="File size in bytes")
+    created_at: Optional[str] = Field(default=None, description="Creation timestamp")
+    width: Optional[int] = Field(default=None, description="Width in pixels")
+    height: Optional[int] = Field(default=None, description="Height in pixels")
+    duration: Optional[float] = Field(default=None, description="Duration in seconds")
 
 
 class AssetUploadData(BaseModel):
@@ -84,19 +84,19 @@ class AssetDeleteResponse(BaseModel):
 class MCPAssetUploadResponse(BaseHeyGenResponse):
     """MCP response for asset upload."""
 
-    asset_id: Optional[str] = Field(None, description="ID of the uploaded asset")
-    url: Optional[str] = Field(None, description="URL to access the uploaded asset")
+    asset_id: Optional[str] = Field(default=None, description="Uploaded asset ID")
+    url: Optional[str] = Field(default=None, description="Uploaded asset URL")
 
 
 class MCPAssetListResponse(BaseHeyGenResponse):
     """MCP response for listing assets."""
 
-    assets: List[Asset] = Field(default_factory=list, description="List of assets")
-    total: Optional[int] = Field(None, description="Total number of assets")
+    assets: Optional[List[Asset]] = Field(default=None, description="List of assets")
+    total: Optional[int] = Field(default=None, description="Total number of assets")
 
 
 class MCPAssetDeleteResponse(BaseHeyGenResponse):
     """MCP response for deleting an asset."""
 
-    success: bool = Field(False, description="Whether the deletion was successful")
-    asset_id: Optional[str] = Field(None, description="ID of the deleted asset")
+    success: bool = Field(default=False, description="Whether deletion was successful")
+    asset_id: Optional[str] = Field(default=None, description="ID of the deleted asset")
