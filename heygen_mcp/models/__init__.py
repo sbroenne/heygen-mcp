@@ -1,5 +1,16 @@
 """HeyGen API models package."""
 
+from .asset import (
+    Asset,
+    AssetDeleteResponse,
+    AssetListData,
+    AssetListResponse,
+    AssetUploadData,
+    AssetUploadResponse,
+    MCPAssetDeleteResponse,
+    MCPAssetListResponse,
+    MCPAssetUploadResponse,
+)
 from .avatar import (
     Avatar,
     AvatarDetails,
@@ -68,6 +79,16 @@ from .voice import (
 __all__ = [
     # Base
     "BaseHeyGenResponse",
+    # Asset
+    "Asset",
+    "AssetUploadData",
+    "AssetUploadResponse",
+    "AssetListData",
+    "AssetListResponse",
+    "AssetDeleteResponse",
+    "MCPAssetUploadResponse",
+    "MCPAssetListResponse",
+    "MCPAssetDeleteResponse",
     # Voice
     "VoiceInfo",
     "VoicesData",

@@ -2,6 +2,8 @@
 
 ![Heygen Logo](heygen_logo.png)
 
+> ⚠️ **Disclaimer**: This is a community fork of the original HeyGen MCP server, which appears to be abandoned. This is **not** an official HeyGen repository. Use at your own discretion.
+
 The HeyGen MCP server enables any MCP Client like Claude Desktop or Agents to use the [HeyGen API](https://docs.heygen.com/) to generate avatars and videos.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -51,12 +53,20 @@ For other installation methods, see the [uv documentation](https://github.com/as
 
 ```json
 {
+  "inputs": [
+    {
+      "id": "heygen-api-key",
+      "type": "promptString",
+      "description": "HeyGen API Key",
+      "password": true
+    }
+  ],
   "mcpServers": {
     "HeyGen": {
       "command": "uvx",
       "args": ["heygen-mcp"],
       "env": {
-        "HEYGEN_API_KEY": "<insert-your-api-key-here>"
+        "HEYGEN_API_KEY": "${input:heygen-api-key}"
       }
     }
   }
@@ -65,16 +75,110 @@ For other installation methods, see the [uv documentation](https://github.com/as
 
 If you're using Windows, you'll need to enable "Developer Mode" in Claude Desktop to use the MCP server. Click "Help" in the hamburger menu at the top left and select "Enable Developer Mode".
 
+### Using with VS Code
+
+Add the following to your VS Code settings (`.vscode/mcp.json`):
+
+```json
+{
+  "inputs": [
+    {
+      "id": "heygen-api-key",
+      "type": "promptString",
+      "description": "HeyGen API Key",
+      "password": true
+    }
+  ],
+  "servers": {
+    "HeyGen": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["heygen-mcp"],
+      "env": {
+        "HEYGEN_API_KEY": "${input:heygen-api-key}"
+      }
+    }
+  }
+}
+```
+
+### Using a Local Development Version
+
+If you want to run from a local clone (for development or testing), use `uv run` instead of `uvx`:
+
+```json
+{
+  "inputs": [
+    {
+      "id": "heygen-api-key",
+      "type": "promptString",
+      "description": "HeyGen API Key",
+      "password": true
+    },
+    {
+      "id": "heygen-mcp-path",
+      "type": "promptString",
+      "description": "Path to local heygen-mcp repository"
+    }
+  ],
+  "mcpServers": {
+    "HeyGen": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "${input:heygen-mcp-path}",
+        "python",
+        "-m",
+        "heygen_mcp.server"
+      ],
+      "env": {
+        "HEYGEN_API_KEY": "${input:heygen-api-key}"
+      }
+    }
+  }
+}
+```
+
+For VS Code, use `servers` instead of `mcpServers`.
+
 ### Available MCP Tools
 
 The server provides the following tools to Claude:
 
-- **get_remaining_credits**: Retrieves the remaining credits in your Heygen account.
-- **get_voices**: Retrieves a list of available voices from the Heygen API (limited to first 100 voices).
-- **get_avatar_groups**: Retrieves a list of Heygen avatar groups.
-- **get_avatars_in_avatar_group**: Retrieves a list of avatars in a specific Heygen avatar group.
+#### Credits & User
+
+- **get_remaining_credits**: Retrieves the remaining credits in your HeyGen account.
+- **get_user_info**: Retrieves profile information of the currently authenticated HeyGen user.
+
+#### Voices
+
+- **get_voices**: Retrieves a list of available voices from the HeyGen API (limited to first 100 voices).
+
+#### Avatars
+
+- **get_avatar_groups**: Retrieves a list of HeyGen avatar groups (private by default, can include public).
+- **get_avatars_in_avatar_group**: Retrieves a list of avatars in a specific HeyGen avatar group.
+- **list_avatars**: Retrieves a list of all available avatars and talking photos (Photo Avatars).
+- **get_avatar_details**: Retrieves detailed information about a specific avatar by its ID.
+
+#### Video Generation
+
 - **generate_avatar_video**: Generates a new avatar video with the specified avatar, text, and voice.
-- **get_avatar_video_status**: Retrieves the status of a video generated via the Heygen API.
+- **get_avatar_video_status**: Retrieves the status of a video generated via the HeyGen API.
+
+#### Templates
+
+- **list_templates**: Retrieves a list of video templates created under your HeyGen account.
+- **get_template_details**: Retrieves detailed information about a specific template including variables.
+- **generate_video_from_template**: Generates a video from a template with variable replacements.
+
+#### Assets
+
+- **upload_asset**: Uploads a media file (image, video, or audio) to your HeyGen account.
+- **list_assets**: Retrieves a list of all assets in your HeyGen account.
+- **delete_asset**: Deletes a specific asset by its asset ID.
 
 ## Development
 
@@ -90,12 +194,12 @@ This will start the server in development mode and allow you to use the MCP Insp
 
 ## Roadmap
 
-- [ ] Tests
+- [x] Tests (integration tests)
+- [x] Template API Support
 - [ ] CICD
 - [ ] Photo Avatar APIs Support
 - [ ] SSE And Remote MCP Server with OAuth Flow
 - [ ] Translation API Support
-- [ ] Template API Support
 - [ ] Interactive Avatar API Support
 
 ## Contributing

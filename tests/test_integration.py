@@ -8,6 +8,7 @@ import pytest
 
 from heygen_mcp.client import HeyGenApiClient
 from heygen_mcp.models import (
+    MCPAssetListResponse,
     MCPAvatarDetailsResponse,
     MCPAvatarGroupResponse,
     MCPAvatarsInGroupResponse,
@@ -109,13 +110,15 @@ class TestAvatarsInGroup:
 
         assert isinstance(result, MCPAvatarsInGroupResponse)
         assert result.error is None, f"API returned error: {result.error}"
-        print(f"\n  Found {len(result.avatars) if result.avatars else 0} avatars in group {group_id}")
+        avatar_count = len(result.avatars) if result.avatars else 0
+        print(f"\n  Found {avatar_count} avatars in group {group_id}")
 
         if result.avatars and len(result.avatars) > 0:
             first_avatar = result.avatars[0]
             assert first_avatar.avatar_id is not None
             assert first_avatar.avatar_name is not None
-            print(f"  First avatar: {first_avatar.avatar_name} (id: {first_avatar.avatar_id})")
+            print(f"  First avatar: {first_avatar.avatar_name}")
+            print(f"    ID: {first_avatar.avatar_id}")
 
 
 class TestVideoGeneration:
@@ -178,7 +181,8 @@ class TestVideoGeneration:
         generate_result = await api_client.generate_avatar_video(request)
 
         assert isinstance(generate_result, MCPVideoGenerateResponse)
-        assert generate_result.error is None, f"API returned error: {generate_result.error}"
+        err = generate_result.error
+        assert err is None, f"API returned error: {err}"
         assert generate_result.video_id is not None
         print(f"\n  Generated video ID: {generate_result.video_id}")
 
@@ -203,7 +207,8 @@ class TestVideoStatus:
         assert isinstance(result, MCPVideoStatusResponse)
         # Should return an error or a failed status
         # The API behavior may vary - it might return an error or a specific status
-        print(f"\n  Result for invalid ID: status={result.status}, error={result.error}")
+        print("\n  Result for invalid ID:")
+        print(f"    status={result.status}, error={result.error}")
 
 
 class TestListAvatars:
@@ -225,7 +230,8 @@ class TestListAvatars:
             first_avatar = result.avatars[0]
             assert first_avatar.avatar_id is not None
             assert first_avatar.avatar_name is not None
-            print(f"  First avatar: {first_avatar.avatar_name} (id: {first_avatar.avatar_id})")
+            print(f"  First avatar: {first_avatar.avatar_name}")
+            print(f"    ID: {first_avatar.avatar_id}")
 
 
 class TestAvatarDetails:
@@ -278,7 +284,8 @@ class TestListTemplates:
             first_template = result.templates[0]
             assert first_template.template_id is not None
             assert first_template.name is not None
-            print(f"  First template: {first_template.name} (id: {first_template.template_id})")
+            print(f"  First template: {first_template.name}")
+            print(f"    ID: {first_template.template_id}")
 
 
 class TestUserInfo:
@@ -368,3 +375,19 @@ class TestGenerateVideoFromTemplate:
         assert result.error is None, f"API returned error: {result.error}"
         assert result.video_id is not None
         print(f"\n  Generated video ID: {result.video_id}")
+
+
+class TestListAssets:
+    """Integration tests for list_assets."""
+
+    @pytest.mark.asyncio
+    async def test_list_assets(self, api_client: HeyGenApiClient):
+        """Test listing assets from the API."""
+        result = await api_client.list_assets()
+
+        assert isinstance(result, MCPAssetListResponse)
+        assert result.error is None, f"API returned error: {result.error}"
+        assert result.assets is not None
+        print(f"\n  Total assets: {len(result.assets)}")
+        if result.assets:
+            print(f"  First asset ID: {result.assets[0].asset_id}")

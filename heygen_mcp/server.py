@@ -11,6 +11,9 @@ from heygen_mcp.client import HeyGenApiClient
 from heygen_mcp.models import (
     Character,
     Dimension,
+    MCPAssetDeleteResponse,
+    MCPAssetListResponse,
+    MCPAssetUploadResponse,
     MCPAvatarDetailsResponse,
     MCPAvatarGroupResponse,
     MCPAvatarsInGroupResponse,
@@ -216,7 +219,7 @@ async def list_templates() -> MCPListTemplatesResponse:
 
 @mcp.tool(
     name="get_user_info",
-    description="Retrieves profile information of the currently authenticated HeyGen user.",
+    description="Retrieves profile information of the current HeyGen user.",
 )
 async def get_user_info() -> MCPUserInfoResponse:
     """Get current user's profile information."""
@@ -249,7 +252,7 @@ async def get_template_details(template_id: str) -> MCPTemplateDetailsResponse:
     description=(
         "Generates a video based on the specified template with variable values "
         "for replacement. Use get_template_details first to see available variables. "
-        "Returns a video_id that can be used with get_avatar_video_status to check progress."
+        "Returns a video_id to use with get_avatar_video_status."
     ),
 )
 async def generate_video_from_template(
@@ -271,6 +274,51 @@ async def generate_video_from_template(
         )
     except Exception as e:
         return MCPTemplateVideoGenerateResponse(error=str(e))
+
+
+# ==================== Asset Tools ====================
+
+
+@mcp.tool(
+    name="upload_asset",
+    description=(
+        "Uploads a media file (image, video, or audio) to your HeyGen account. "
+        "Returns an asset_id that can be used in video generation."
+    ),
+)
+async def upload_asset(file_path: str) -> MCPAssetUploadResponse:
+    """Upload a media file to HeyGen."""
+    try:
+        client = await get_api_client()
+        return await client.upload_asset(file_path)
+    except Exception as e:
+        return MCPAssetUploadResponse(error=str(e))
+
+
+@mcp.tool(
+    name="list_assets",
+    description="Retrieves all assets (images, videos, audios) in your account.",
+)
+async def list_assets() -> MCPAssetListResponse:
+    """List all assets in the HeyGen account."""
+    try:
+        client = await get_api_client()
+        return await client.list_assets()
+    except Exception as e:
+        return MCPAssetListResponse(error=str(e))
+
+
+@mcp.tool(
+    name="delete_asset",
+    description="Deletes a specific asset from your HeyGen account by its asset ID.",
+)
+async def delete_asset(asset_id: str) -> MCPAssetDeleteResponse:
+    """Delete an asset by its ID."""
+    try:
+        client = await get_api_client()
+        return await client.delete_asset(asset_id)
+    except Exception as e:
+        return MCPAssetDeleteResponse(error=str(e), success=False)
 
 
 def parse_args():

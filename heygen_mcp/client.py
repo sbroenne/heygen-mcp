@@ -7,18 +7,24 @@ from typing import Any, Dict, Optional
 import httpx
 from tenacity import (
     RetryError,
+    before_sleep_log,
     retry,
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    before_sleep_log,
 )
 
 from .models import (
+    AssetDeleteResponse,
+    AssetListResponse,
+    AssetUploadResponse,
     AvatarDetailsResponse,
     AvatarGroupListResponse,
     AvatarsInGroupResponse,
     AvatarsV2Response,
+    MCPAssetDeleteResponse,
+    MCPAssetListResponse,
+    MCPAssetUploadResponse,
     MCPAvatarDetailsResponse,
     MCPAvatarGroupResponse,
     MCPAvatarsInGroupResponse,
@@ -494,7 +500,8 @@ class HeyGenApiClient:
         """
 
         async def api_call():
-            return await self._make_request(f"../v1/video_status.get?video_id={video_id}")
+            endpoint = f"../v1/video_status.get?video_id={video_id}"
+            return await self._make_request(endpoint)
 
         try:
             result = await api_call()
@@ -621,3 +628,142 @@ class HeyGenApiClient:
             error_msg="Failed to generate video from template.",
             transform_func=transform_data,
         )
+
+    # ==================== Asset Methods ====================
+
+    async def upload_asset(
+        self,
+        file_path: str,
+    ) -> MCPAssetUploadResponse:
+        """Upload a media file (image, video, or audio) to HeyGen.
+
+        Note: The upload API uses a different base URL (upload.heygen.com).
+
+        Args:
+            file_path: Path to the file to upload.
+
+        Returns:
+            MCPAssetUploadResponse with asset_id and url.
+        """
+        import mimetypes
+        import os
+
+        upload_url = "https://upload.heygen.com/v1/asset"
+
+        try:
+            # Determine MIME type
+            mime_type, _ = mimetypes.guess_type(file_path)
+            if mime_type is None:
+                mime_type = "application/octet-stream"
+
+            file_name = os.path.basename(file_path)
+
+            # Read the file
+            with open(file_path, "rb") as f:
+                file_content = f.read()
+
+            # Prepare multipart form data
+            files = {
+                "file": (file_name, file_content, mime_type),
+            }
+
+            headers = {
+                "X-Api-Key": self.api_key,
+                "User-Agent": self._user_agent,
+            }
+
+            response = await self._client.post(
+                upload_url,
+                headers=headers,
+                files=files,
+            )
+
+            if response.status_code in RETRYABLE_STATUS_CODES:
+                raise RetryableHTTPError(
+                    response.status_code,
+                    f"HTTP {response.status_code}: {response.text[:200]}",
+                )
+
+            response.raise_for_status()
+            result = response.json()
+
+            parsed = AssetUploadResponse.model_validate(result)
+
+            if parsed.error:
+                return MCPAssetUploadResponse(error=parsed.error)
+
+            if parsed.data:
+                return MCPAssetUploadResponse(
+                    asset_id=parsed.data.asset_id,
+                    url=parsed.data.url,
+                )
+
+            return MCPAssetUploadResponse(error="Upload failed: No data returned.")
+
+        except FileNotFoundError:
+            return MCPAssetUploadResponse(error=f"File not found: {file_path}")
+        except httpx.HTTPStatusError as e:
+            return MCPAssetUploadResponse(error=f"Upload failed: {e}")
+        except Exception as e:
+            return MCPAssetUploadResponse(error=f"Upload error: {e}")
+
+    async def list_assets(self) -> MCPAssetListResponse:
+        """List all assets in the HeyGen account.
+
+        Returns:
+            MCPAssetListResponse with list of assets.
+        """
+
+        async def api_call():
+            return await self._make_request("../v1/asset/list")
+
+        def transform_data(data, mcp_class):
+            return mcp_class(
+                assets=data.assets if data.assets else [],
+                total=data.total,
+            )
+
+        return await self._handle_api_request(
+            api_call=api_call,
+            response_model_class=AssetListResponse,
+            mcp_response_class=MCPAssetListResponse,
+            error_msg="Failed to list assets.",
+            transform_func=transform_data,
+        )
+
+    async def delete_asset(self, asset_id: str) -> MCPAssetDeleteResponse:
+        """Delete a specific asset by its ID.
+
+        Args:
+            asset_id: The ID of the asset to delete.
+
+        Returns:
+            MCPAssetDeleteResponse indicating success or failure.
+        """
+
+        async def api_call():
+            return await self._make_request(
+                f"../v1/asset/{asset_id}/delete",
+                method="POST",
+            )
+
+        try:
+            result = await api_call()
+            parsed = AssetDeleteResponse.model_validate(result)
+
+            if parsed.error:
+                return MCPAssetDeleteResponse(error=parsed.error, success=False)
+
+            return MCPAssetDeleteResponse(success=True, asset_id=asset_id)
+
+        except httpx.HTTPStatusError as e:
+            return MCPAssetDeleteResponse(
+                error=f"Failed to delete asset: {e}",
+                success=False,
+            )
+        except Exception as e:
+            return MCPAssetDeleteResponse(
+                error=f"Error deleting asset: {e}",
+                success=False,
+            )
+
