@@ -95,7 +95,7 @@ Follow [Semantic Versioning](https://semver.org/):
 
 For pre-releases:
 - `v0.2.0-alpha.1` - Alpha release
-- `v0.2.0-beta.1` - Beta release  
+- `v0.2.0-beta.1` - Beta release
 - `v0.2.0-rc.1` - Release candidate
 
 ## Verify Installation

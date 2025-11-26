@@ -210,15 +210,56 @@ videos(action="generate", avatar_id="...", input_text="Hello!", voice_id="...")
 
 ## Development
 
+### Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/sbroenne/heygen-mcp.git
+cd heygen-mcp
+
+# Install dependencies
+uv sync --dev
+
+# Install pre-commit hooks
+uv run pre-commit install
+```
+
+### Pre-commit Hooks
+
+This project uses pre-commit to run checks before each commit:
+
+- **ruff** - Linting and auto-fixing
+- **ruff-format** - Code formatting
+- **pyright** - Type checking
+- **trailing-whitespace** - Remove trailing whitespace
+- **end-of-file-fixer** - Ensure files end with newline
+- **check-yaml** - Validate YAML files
+
+Run hooks manually on all files:
+
+```bash
+uv run pre-commit run --all-files
+```
+
 ### Running with MCP Inspector
 
 To run the server locally with the MCP Inspector for testing and debugging:
 
 ```bash
-uv --with "mcp[cli]" dev heygen_mcp/server.py
+uv run mcp dev heygen_mcp/server.py
 ```
 
 This will start the server in development mode and allow you to use the MCP Inspector to test the available tools and functionality.
+
+### Running Tests
+
+```bash
+# Run all tests (requires HEYGEN_API_KEY in .env)
+uv run pytest tests/ -v
+
+# Skip video generation tests (uses credits)
+uv run pytest tests/ -v -k "not video_generation"
+```
 
 ## Roadmap
 

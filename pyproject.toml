@@ -50,6 +50,7 @@ dev = [
     "pyright",
     "build",
     "twine",
+    "pre-commit",
 ]
 
 [tool.ruff]
