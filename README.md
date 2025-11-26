@@ -64,7 +64,7 @@ For other installation methods, see the [uv documentation](https://github.com/as
   "mcpServers": {
     "HeyGen": {
       "command": "uvx",
-      "args": ["heygen-mcp"],
+      "args": ["heygen-mcp-sbroenne"],
       "env": {
         "HEYGEN_API_KEY": "${input:heygen-api-key}"
       }
@@ -93,7 +93,7 @@ Add the following to your VS Code settings (`.vscode/mcp.json`):
     "HeyGen": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["heygen-mcp"],
+      "args": ["heygen-mcp-sbroenne"],
       "env": {
         "HEYGEN_API_KEY": "${input:heygen-api-key}"
       }
@@ -145,40 +145,68 @@ For VS Code, use `servers` instead of `mcpServers`.
 
 ### Available MCP Tools
 
-The server provides the following tools to Claude:
+The server provides 6 resource-based tools, each with multiple actions:
 
-#### Credits & User
+#### `user` - User Account Management
 
-- **get_remaining_credits**: Retrieves the remaining credits in your HeyGen account.
-- **get_user_info**: Retrieves profile information of the currently authenticated HeyGen user.
+| Action | Description |
+|--------|-------------|
+| `info` | Get user profile information |
+| `credits` | Get remaining credits/quota |
 
-#### Voices
+#### `voices` - Voice Management
 
-- **get_voices**: Retrieves a list of available voices from the HeyGen API (limited to first 100 voices).
+| Action | Description |
+|--------|-------------|
+| `list` | Get available voices (max 100, private voices first) |
 
-#### Avatars
+#### `avatars` - Avatar Management
 
-- **get_avatar_groups**: Retrieves a list of HeyGen avatar groups (private by default, can include public).
-- **get_avatars_in_avatar_group**: Retrieves a list of avatars in a specific HeyGen avatar group.
-- **list_avatars**: Retrieves a list of all available avatars and talking photos (Photo Avatars).
-- **get_avatar_details**: Retrieves detailed information about a specific avatar by its ID.
+| Action | Parameters | Description |
+|--------|------------|-------------|
+| `list` | - | Get all avatars and talking photos |
+| `get` | `avatar_id` | Get details for a specific avatar |
+| `list_groups` | `include_public` (optional) | Get avatar groups |
+| `list_in_group` | `group_id` | Get avatars in a specific group |
 
-#### Video Generation
+#### `videos` - Video Generation
 
-- **generate_avatar_video**: Generates a new avatar video with the specified avatar, text, and voice.
-- **get_avatar_video_status**: Retrieves the status of a video generated via the HeyGen API.
+| Action | Parameters | Description |
+|--------|------------|-------------|
+| `generate` | `avatar_id`, `input_text`, `voice_id`, `title` (optional) | Create a new avatar video |
+| `status` | `video_id` | Check video processing status |
 
-#### Templates
+#### `templates` - Template Management
 
-- **list_templates**: Retrieves a list of video templates created under your HeyGen account.
-- **get_template_details**: Retrieves detailed information about a specific template including variables.
-- **generate_video_from_template**: Generates a video from a template with variable replacements.
+| Action | Parameters | Description |
+|--------|------------|-------------|
+| `list` | - | Get all templates in your account |
+| `get` | `template_id` | Get template details including variables |
+| `generate` | `template_id`, `variables` (optional), `title`, `test`, `caption` | Create video from template |
 
-#### Assets
+#### `assets` - Asset Management
 
-- **upload_asset**: Uploads a media file (image, video, or audio) to your HeyGen account.
-- **list_assets**: Retrieves a list of all assets in your HeyGen account.
-- **delete_asset**: Deletes a specific asset by its asset ID.
+| Action | Parameters | Description |
+|--------|------------|-------------|
+| `list` | - | Get all assets (images, videos, audios) |
+| `upload` | `file_path` | Upload a media file, returns asset_id |
+| `delete` | `asset_id` | Remove an asset |
+
+**Example Usage:**
+
+```
+# Get remaining credits
+user(action="credits")
+
+# List all avatars
+avatars(action="list")
+
+# Get specific avatar details
+avatars(action="get", avatar_id="avatar_123")
+
+# Generate a video
+videos(action="generate", avatar_id="...", input_text="Hello!", voice_id="...")
+```
 
 ## Development
 
@@ -194,9 +222,9 @@ This will start the server in development mode and allow you to use the MCP Insp
 
 ## Roadmap
 
-- [x] Tests (integration tests)
+- [x] Tests (integration tests + MCP server smoke tests)
 - [x] Template API Support
-- [ ] CICD
+- [x] CI/CD (GitHub Actions + PyPI release)
 - [ ] Photo Avatar APIs Support
 - [ ] SSE And Remote MCP Server with OAuth Flow
 - [ ] Translation API Support
@@ -205,6 +233,8 @@ This will start the server in development mode and allow you to use the MCP Insp
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+For maintainers: see the [Publishing Guide](docs/PUBLISHING.md) for release instructions.
 
 ## License
 

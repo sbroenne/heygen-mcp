@@ -1,8 +1,10 @@
 """HeyGen MCP server module providing MCP tools for the HeyGen API."""
 
 import argparse
+import logging
 import os
 import sys
+from typing import Literal
 
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
@@ -31,6 +33,13 @@ from heygen_mcp.models import (
     Voice,
 )
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger("heygen_mcp")
+
 # Load environment variables
 load_dotenv()
 
@@ -58,267 +67,319 @@ async def get_api_client() -> HeyGenApiClient:
         raise ValueError("HEYGEN_API_KEY environment variable not set.")
 
     _api_client = HeyGenApiClient(api_key)
+    logger.info("HeyGen API client initialized")
     return _api_client
 
 
-# ==================== Credits & User Tools ====================
+async def reset_api_client() -> None:
+    """Reset the API client singleton. Used for testing."""
+    global _api_client
+    if _api_client is not None:
+        await _api_client.close()
+        _api_client = None
+
+
+# ==================== User Resource ====================
 
 
 @mcp.tool(
-    name="get_remaining_credits",
-    description="Retrieves the remaining credits in heygen account.",
-)
-async def get_remaining_credits() -> MCPGetCreditsResponse:
-    """Get the remaining quota for the user via HeyGen API."""
-    try:
-        client = await get_api_client()
-        return await client.get_remaining_credits()
-    except Exception as e:
-        return MCPGetCreditsResponse(error=str(e))
-
-
-@mcp.tool(
-    name="get_voices",
+    name="user",
     description=(
-        "Retrieves a list of available voices from the HeyGen API. Results truncated "
-        "to first 100 voices. Private voices generally will returned 1st."
+        "Manage HeyGen user account. Actions: "
+        "'info' - get user profile information; "
+        "'credits' - get remaining credits/quota."
     ),
 )
-async def get_voices() -> MCPVoicesResponse:
-    """Get the list of available voices via HeyGen API."""
+async def user(
+    action: Literal["info", "credits"],
+) -> MCPUserInfoResponse | MCPGetCreditsResponse:
+    """Manage user account information and credits."""
+    logger.info(f"user action={action}")
     try:
         client = await get_api_client()
-        return await client.get_voices()
+
+        if action == "info":
+            return await client.get_user_info()
+        elif action == "credits":
+            return await client.get_remaining_credits()
+        else:
+            return MCPUserInfoResponse(error=f"Unknown action: {action}")
+
     except Exception as e:
-        return MCPVoicesResponse(error=str(e))
-
-
-@mcp.tool(
-    name="get_avatar_groups",
-    description=(
-        "Retrieves a list of HeyGen avatar groups. By default, only private avatar "
-        "groups are returned, unless include_public is set to true. Avatar groups "
-        "are collections of avatars, avatar group ids cannot be used to generate "
-        "videos."
-    ),
-)
-async def get_avatar_groups(include_public: bool = False) -> MCPAvatarGroupResponse:
-    """List avatar groups via HeyGen API v2/avatar_group.list endpoint."""
-    try:
-        client = await get_api_client()
-        return await client.list_avatar_groups(include_public)
-    except Exception as e:
-        return MCPAvatarGroupResponse(error=str(e))
-
-
-@mcp.tool(
-    name="get_avatars_in_avatar_group",
-    description="Retrieves a list of avatars in a specific HeyGen avatar group.",
-)
-async def get_avatars_in_avatar_group(group_id: str) -> MCPAvatarsInGroupResponse:
-    """List avatars in a specific HeyGen avatar group via HeyGen API."""
-    try:
-        client = await get_api_client()
-        return await client.get_avatars_in_group(group_id)
-    except Exception as e:
-        return MCPAvatarsInGroupResponse(error=str(e))
-
-
-@mcp.tool(
-    name="generate_avatar_video",
-    description="Generates a new avatar video via the HeyGen API.",
-)
-async def generate_avatar_video(
-    avatar_id: str, input_text: str, voice_id: str, title: str = ""
-) -> MCPVideoGenerateResponse:
-    """Generate a new avatar video using the HeyGen API."""
-    try:
-        # Create the request object with default values
-        request = VideoGenerateRequest(
-            title=title,
-            video_inputs=[
-                VideoInput(
-                    character=Character(avatar_id=avatar_id),
-                    voice=Voice(input_text=input_text, voice_id=voice_id),
-                )
-            ],
-            dimension=Dimension(width=1280, height=720),
-        )
-
-        client = await get_api_client()
-        return await client.generate_avatar_video(request)
-    except Exception as e:
-        return MCPVideoGenerateResponse(error=str(e))
-
-
-@mcp.tool(
-    name="get_avatar_video_status",
-    description=(
-        "Retrieves the status of a video generated via the HeyGen API. Video status "
-        "make take several minutes to hours depending on length of video and queue "
-        "time. If video is not yet complete, status be viewed later by user via "
-        "https://app.heygen.com/home"
-    ),
-)
-async def get_avatar_video_status(video_id: str) -> MCPVideoStatusResponse:
-    """Retrieve the status of a video generated via the HeyGen API."""
-    try:
-        client = await get_api_client()
-        return await client.get_video_status(video_id)
-    except Exception as e:
-        return MCPVideoStatusResponse(error=str(e))
-
-
-@mcp.tool(
-    name="list_avatars",
-    description=(
-        "Retrieves a list of all available avatars and talking photos (Photo Avatars) "
-        "from the HeyGen API. This returns avatars independently of their groups."
-    ),
-)
-async def list_avatars() -> MCPListAvatarsResponse:
-    """List all available avatars via HeyGen API."""
-    try:
-        client = await get_api_client()
-        return await client.list_avatars()
-    except Exception as e:
-        return MCPListAvatarsResponse(error=str(e))
-
-
-@mcp.tool(
-    name="get_avatar_details",
-    description=(
-        "Retrieves detailed information about a specific avatar by its ID. "
-        "Includes poses and voice information if available."
-    ),
-)
-async def get_avatar_details(avatar_id: str) -> MCPAvatarDetailsResponse:
-    """Get detailed information about a specific avatar."""
-    try:
-        client = await get_api_client()
-        return await client.get_avatar_details(avatar_id)
-    except Exception as e:
-        return MCPAvatarDetailsResponse(error=str(e))
-
-
-@mcp.tool(
-    name="list_templates",
-    description=(
-        "Retrieves a list of video templates created under your HeyGen account. "
-        "Default templates provided by the platform are not included."
-    ),
-)
-async def list_templates() -> MCPListTemplatesResponse:
-    """List all templates via HeyGen API."""
-    try:
-        client = await get_api_client()
-        return await client.list_templates()
-    except Exception as e:
-        return MCPListTemplatesResponse(error=str(e))
-
-
-@mcp.tool(
-    name="get_user_info",
-    description="Retrieves profile information of the current HeyGen user.",
-)
-async def get_user_info() -> MCPUserInfoResponse:
-    """Get current user's profile information."""
-    try:
-        client = await get_api_client()
-        return await client.get_user_info()
-    except Exception as e:
+        logger.error(f"user action={action} error: {e}")
+        if action == "credits":
+            return MCPGetCreditsResponse(error=str(e))
         return MCPUserInfoResponse(error=str(e))
 
 
+# ==================== Voices Resource ====================
+
+
 @mcp.tool(
-    name="get_template_details",
+    name="voices",
     description=(
-        "Retrieves detailed information about a specific template by its ID, "
-        "including all variables available for replacement. For templates created "
-        "in the New AI Studio, scenes with their variables are also returned."
+        "Manage HeyGen voices. Actions: "
+        "'list' - get available voices (max 100, private voices first)."
     ),
 )
-async def get_template_details(template_id: str) -> MCPTemplateDetailsResponse:
-    """Get detailed information about a specific template including variables."""
+async def voices(
+    action: Literal["list"],
+) -> MCPVoicesResponse:
+    """Manage voice resources."""
+    logger.info(f"voices action={action}")
     try:
         client = await get_api_client()
-        return await client.get_template_details(template_id)
+
+        if action == "list":
+            return await client.get_voices()
+        else:
+            return MCPVoicesResponse(error=f"Unknown action: {action}")
+
     except Exception as e:
-        return MCPTemplateDetailsResponse(error=str(e))
+        logger.error(f"voices action={action} error: {e}")
+        return MCPVoicesResponse(error=str(e))
+
+
+# ==================== Avatars Resource ====================
 
 
 @mcp.tool(
-    name="generate_video_from_template",
+    name="avatars",
     description=(
-        "Generates a video based on the specified template with variable values "
-        "for replacement. Use get_template_details first to see available variables. "
-        "Returns a video_id to use with get_avatar_video_status."
+        "Manage HeyGen avatars and avatar groups. Actions: "
+        "'list' - get all avatars and talking photos; "
+        "'get' - get details for a specific avatar (requires avatar_id); "
+        "'list_groups' - get avatar groups (set include_public=true for public); "
+        "'list_in_group' - get avatars in a specific group (requires group_id)."
     ),
 )
-async def generate_video_from_template(
-    template_id: str,
+async def avatars(
+    action: Literal["list", "get", "list_groups", "list_in_group"],
+    avatar_id: str | None = None,
+    group_id: str | None = None,
+    include_public: bool = False,
+) -> (
+    MCPListAvatarsResponse
+    | MCPAvatarDetailsResponse
+    | MCPAvatarGroupResponse
+    | MCPAvatarsInGroupResponse
+):
+    """Manage avatar resources."""
+    logger.info(f"avatars action={action} avatar_id={avatar_id} group_id={group_id}")
+    try:
+        client = await get_api_client()
+
+        if action == "list":
+            return await client.list_avatars()
+
+        elif action == "get":
+            if not avatar_id:
+                return MCPAvatarDetailsResponse(
+                    error="avatar_id is required for 'get' action"
+                )
+            return await client.get_avatar_details(avatar_id)
+
+        elif action == "list_groups":
+            return await client.list_avatar_groups(include_public)
+
+        elif action == "list_in_group":
+            if not group_id:
+                return MCPAvatarsInGroupResponse(
+                    error="group_id is required for 'list_in_group' action"
+                )
+            return await client.get_avatars_in_group(group_id)
+
+        else:
+            return MCPListAvatarsResponse(error=f"Unknown action: {action}")
+
+    except Exception as e:
+        logger.error(f"avatars action={action} error: {e}")
+        return MCPListAvatarsResponse(error=str(e))
+
+
+# ==================== Videos Resource ====================
+
+
+@mcp.tool(
+    name="videos",
+    description=(
+        "Manage HeyGen video generation. Actions: "
+        "'generate' - create a new avatar video (requires avatar_id, input_text, "
+        "voice_id; optional title); "
+        "'status' - check video status (requires video_id). "
+        "Note: Video processing may take minutes to hours."
+    ),
+)
+async def videos(
+    action: Literal["generate", "status"],
+    video_id: str | None = None,
+    avatar_id: str | None = None,
+    input_text: str | None = None,
+    voice_id: str | None = None,
+    title: str = "",
+) -> MCPVideoGenerateResponse | MCPVideoStatusResponse:
+    """Manage video generation and status."""
+    logger.info(f"videos action={action} video_id={video_id} avatar_id={avatar_id}")
+    try:
+        client = await get_api_client()
+
+        if action == "generate":
+            if not avatar_id:
+                return MCPVideoGenerateResponse(
+                    error="avatar_id is required for 'generate' action"
+                )
+            if not input_text:
+                return MCPVideoGenerateResponse(
+                    error="input_text is required for 'generate' action"
+                )
+            if not voice_id:
+                return MCPVideoGenerateResponse(
+                    error="voice_id is required for 'generate' action"
+                )
+
+            request = VideoGenerateRequest(
+                title=title,
+                video_inputs=[
+                    VideoInput(
+                        character=Character(avatar_id=avatar_id),
+                        voice=Voice(input_text=input_text, voice_id=voice_id),
+                    )
+                ],
+                dimension=Dimension(width=1280, height=720),
+            )
+            return await client.generate_avatar_video(request)
+
+        elif action == "status":
+            if not video_id:
+                return MCPVideoStatusResponse(
+                    error="video_id is required for 'status' action"
+                )
+            return await client.get_video_status(video_id)
+
+        else:
+            return MCPVideoGenerateResponse(error=f"Unknown action: {action}")
+
+    except Exception as e:
+        logger.error(f"videos action={action} error: {e}")
+        if action == "status":
+            return MCPVideoStatusResponse(error=str(e))
+        return MCPVideoGenerateResponse(error=str(e))
+
+
+# ==================== Templates Resource ====================
+
+
+@mcp.tool(
+    name="templates",
+    description=(
+        "Manage HeyGen video templates. Actions: "
+        "'list' - get all templates in your account; "
+        "'get' - get template details including variables (requires template_id); "
+        "'generate' - create video from template (requires template_id; optional "
+        "variables dict, title, test mode, caption)."
+    ),
+)
+async def templates(
+    action: Literal["list", "get", "generate"],
+    template_id: str | None = None,
     variables: dict | None = None,
     title: str | None = None,
     test: bool = False,
     caption: bool = False,
-) -> MCPTemplateVideoGenerateResponse:
-    """Generate a video from a template with variable replacements."""
+) -> (
+    MCPListTemplatesResponse
+    | MCPTemplateDetailsResponse
+    | MCPTemplateVideoGenerateResponse
+):
+    """Manage template resources and template-based video generation."""
+    logger.info(f"templates action={action} template_id={template_id}")
     try:
         client = await get_api_client()
-        return await client.generate_video_from_template(
-            template_id=template_id,
-            variables=variables,
-            title=title,
-            test=test,
-            caption=caption,
-        )
+
+        if action == "list":
+            return await client.list_templates()
+
+        elif action == "get":
+            if not template_id:
+                return MCPTemplateDetailsResponse(
+                    error="template_id is required for 'get' action"
+                )
+            return await client.get_template_details(template_id)
+
+        elif action == "generate":
+            if not template_id:
+                return MCPTemplateVideoGenerateResponse(
+                    error="template_id is required for 'generate' action"
+                )
+            return await client.generate_video_from_template(
+                template_id=template_id,
+                variables=variables,
+                title=title,
+                test=test,
+                caption=caption,
+            )
+
+        else:
+            return MCPListTemplatesResponse(error=f"Unknown action: {action}")
+
     except Exception as e:
-        return MCPTemplateVideoGenerateResponse(error=str(e))
+        logger.error(f"templates action={action} error: {e}")
+        return MCPListTemplatesResponse(error=str(e))
 
 
-# ==================== Asset Tools ====================
+# ==================== Assets Resource ====================
 
 
 @mcp.tool(
-    name="upload_asset",
+    name="assets",
     description=(
-        "Uploads a media file (image, video, or audio) to your HeyGen account. "
-        "Returns an asset_id that can be used in video generation."
+        "Manage HeyGen media assets. Actions: "
+        "'list' - get all assets (images, videos, audios); "
+        "'upload' - upload a media file (requires file_path), returns asset_id; "
+        "'delete' - remove an asset (requires asset_id)."
     ),
 )
-async def upload_asset(file_path: str) -> MCPAssetUploadResponse:
-    """Upload a media file to HeyGen."""
+async def assets(
+    action: Literal["list", "upload", "delete"],
+    file_path: str | None = None,
+    asset_id: str | None = None,
+) -> MCPAssetListResponse | MCPAssetUploadResponse | MCPAssetDeleteResponse:
+    """Manage media asset resources."""
+    logger.info(f"assets action={action} file_path={file_path} asset_id={asset_id}")
     try:
         client = await get_api_client()
-        return await client.upload_asset(file_path)
-    except Exception as e:
-        return MCPAssetUploadResponse(error=str(e))
 
+        if action == "list":
+            return await client.list_assets()
 
-@mcp.tool(
-    name="list_assets",
-    description="Retrieves all assets (images, videos, audios) in your account.",
-)
-async def list_assets() -> MCPAssetListResponse:
-    """List all assets in the HeyGen account."""
-    try:
-        client = await get_api_client()
-        return await client.list_assets()
+        elif action == "upload":
+            if not file_path:
+                return MCPAssetUploadResponse(
+                    error="file_path is required for 'upload' action"
+                )
+            return await client.upload_asset(file_path)
+
+        elif action == "delete":
+            if not asset_id:
+                return MCPAssetDeleteResponse(
+                    error="asset_id is required for 'delete' action",
+                    success=False,
+                )
+            return await client.delete_asset(asset_id)
+
+        else:
+            return MCPAssetListResponse(error=f"Unknown action: {action}")
+
     except Exception as e:
+        logger.error(f"assets action={action} error: {e}")
+        if action == "upload":
+            return MCPAssetUploadResponse(error=str(e))
+        if action == "delete":
+            return MCPAssetDeleteResponse(error=str(e), success=False)
         return MCPAssetListResponse(error=str(e))
 
 
-@mcp.tool(
-    name="delete_asset",
-    description="Deletes a specific asset from your HeyGen account by its asset ID.",
-)
-async def delete_asset(asset_id: str) -> MCPAssetDeleteResponse:
-    """Delete an asset by its ID."""
-    try:
-        client = await get_api_client()
-        return await client.delete_asset(asset_id)
-    except Exception as e:
-        return MCPAssetDeleteResponse(error=str(e), success=False)
+# ==================== CLI ====================
 
 
 def parse_args():
@@ -326,9 +387,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="HeyGen MCP Server")
     parser.add_argument(
         "--api-key",
-        help=(
-            "HeyGen API key. Alternatively, set HEYGEN_API_KEY environment variable."
-        ),
+        help="HeyGen API key. Or set HEYGEN_API_KEY environment variable.",
     )
     parser.add_argument(
         "--host", default="127.0.0.1", help="Host to bind the server to."
@@ -341,12 +400,22 @@ def parse_args():
         action="store_true",
         help="Enable auto-reload for development.",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug logging.",
+    )
     return parser.parse_args()
 
 
 def main():
     """Run the MCP server."""
     args = parse_args()
+
+    # Configure debug logging if requested
+    if args.debug:
+        logging.getLogger("heygen_mcp").setLevel(logging.DEBUG)
+        logger.debug("Debug logging enabled")
 
     # Check if API key is provided or in environment
     if args.api_key:
@@ -360,6 +429,7 @@ def main():
         )
         sys.exit(1)
 
+    logger.info("Starting HeyGen MCP server")
     mcp.run()
 
 
