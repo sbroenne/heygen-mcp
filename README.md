@@ -324,6 +324,13 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 For maintainers: see the [Publishing Guide](docs/PUBLISHING.md) for release instructions.
 
+## Related Projects
+
+- **[Windows MCP Servers](https://windowsmcpserver.dev/)** - Collection of Windows-focused MCP servers
+- **[ExcelMcp](https://github.com/sbroenne/mcp-server-excel)** - MCP Server for Microsoft Excel automation
+- **[OBS Studio MCP](https://github.com/sbroenne/mcp-server-obs)** - MCP Server for OBS Studio screen recording
+- **[agent-benchmark](https://github.com/mykhaliev/agent-benchmark)** - Framework for testing LLM + MCP integrations
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
