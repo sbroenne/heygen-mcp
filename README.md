@@ -190,7 +190,7 @@ For VS Code, use `servers` instead of `mcpServers`.
 
 ### Available MCP Tools
 
-The server provides 6 resource-based tools, each with multiple actions:
+The server provides 7 resource-based tools, each with multiple actions:
 
 #### `user` - User Account Management
 
@@ -218,10 +218,12 @@ The server provides 6 resource-based tools, each with multiple actions:
 
 | Action | Parameters | Description |
 |--------|------------|-------------|
-| `generate` | `avatar_id`, `input_text`, `voice_id`, `title` (optional), `background_type`, `background_value`, `background_image_asset_id`, `background_video_asset_id`, `background_play_style` (optional) | Create a new avatar video with optional background (color/image/video) |
+| `list` | `token` (optional) | List all videos with pagination |
+| `generate` | `avatar_id`, `input_text`, `voice_id`, `title` (optional), background options | Create a new avatar video |
+| `generate_iv` | `image_key`, `script`, `voice_id`, `video_title`, motion options | Create Avatar IV video from photo |
 | `status` | `video_id` | Check video processing status |
 
-**✨ New: Video Background Support** - Generate videos with color, image, or video backgrounds. Perfect for tutorial videos with screen recordings! See [Video Backgrounds Guide](docs/VIDEO_BACKGROUNDS.md) for details.
+**✨ Video Background Support** - Generate videos with color, image, or video backgrounds. See [Video Backgrounds Guide](docs/VIDEO_BACKGROUNDS.md) for details.
 
 #### `templates` - Template Management
 
@@ -238,6 +240,14 @@ The server provides 6 resource-based tools, each with multiple actions:
 | `list` | - | Get all assets (images, videos, audios) |
 | `upload` | `file_path` | Upload a media file, returns asset_id |
 | `delete` | `asset_id` | Remove an asset |
+
+#### `folders` - Folder Management
+
+| Action | Parameters | Description |
+|--------|------------|-------------|
+| `list` | - | Get all folders |
+| `create` | `name` | Create a new folder |
+| `delete` | `folder_id` | Delete a folder |
 
 **Example Usage:**
 
