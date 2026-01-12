@@ -12,6 +12,15 @@ HeyGen MCP Server for VS Code, enabling AI assistants like GitHub Copilot to gen
 - **Avatar & Voice Selection**: Access all available avatars and voices
 - **Seamless Integration**: Works with VS Code's language model features and Copilot
 
+## Requirements
+
+- **VS Code 1.106.0** or later
+- **[uv](https://docs.astral.sh/uv/)** - The extension uses `uvx` to run the MCP server
+  - macOS/Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+  - Windows: `irm https://astral.sh/uv/install.ps1 | iex`
+  - See [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/) for more options
+- **HeyGen API key** - [Get one here](https://app.heygen.com/settings?nav=API) (10 free credits/month)
+
 ## Installation
 
 ### From VS Code Marketplace
@@ -184,30 +193,20 @@ To publish a new version:
 
 ## Troubleshooting
 
-### "HeyGen MCP server not found"
+### "HeyGen MCP server not found" or "uvx command not found"
 
-Make sure `heygen-mcp-sbroenne` is installed:
-
-```bash
-pip install heygen-mcp-sbroenne
-```
-
-Or install via uv:
-
-```bash
-uv pip install heygen-mcp-sbroenne
-```
+Make sure `uv` is installed (see [Requirements](#requirements) above). After installing, restart VS Code.
 
 ### "API key not valid"
 
-1. Verify your API key at [HeyGen Dashboard](https://www.heygen.com/)
+1. Verify your API key at [HeyGen Dashboard](https://app.heygen.com/settings?nav=API)
 2. Use "HeyGen: Configure API Key" command to update it
-3. Check that the key is saved in workspace settings (not accidentally in global settings)
+3. The key is saved in VS Code's global settings
 
 ### Extension not activating
 
-1. Reload VS Code window (Cmd+Shift+P → "Developer: Reload Window")
-2. Check VS Code output for errors (View → Output → HeyGen MCP)
+1. Reload VS Code window (Ctrl+Shift+P → "Developer: Reload Window")
+2. Check VS Code output for errors (View → Output → select "HeyGen MCP" from dropdown)
 
 ## Links
 
