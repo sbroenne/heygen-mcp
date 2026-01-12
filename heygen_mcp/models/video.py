@@ -26,7 +26,7 @@ class Voice(BaseModel):
 
 class Background(BaseModel):
     """Background configuration for video generation.
-    
+
     Supports three background types:
     - color: Solid color background using hex code
     - image: Static image background
@@ -40,7 +40,8 @@ class Background(BaseModel):
     video_asset_id: Optional[str] = Field(None, description="Asset ID for type='video'")
     play_style: Optional[str] = Field(
         None,
-        description="Video playback style: 'fit_to_scene', 'freeze', 'loop', or 'full_video'"
+        description="Video playback style: 'fit_to_scene', 'freeze', "
+        "'loop', or 'full_video'",
     )
 
     model_config = {"extra": "forbid"}

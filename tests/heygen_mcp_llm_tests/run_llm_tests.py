@@ -110,9 +110,11 @@ def find_agent_benchmark(config: dict[str, Any]) -> tuple[list[str], str]:
     print("Options:")
     print("  1. Set agentBenchmarkPath in llm_tests_config.local.json")
     print(
-        "  2. Install agent-benchmark: go install github.com/mykhaliev/agent-benchmark@latest"
+        "  2. Install agent-benchmark: "
+        "go install github.com/mykhaliev/agent-benchmark@latest"
     )
-    print("  3. Download from: https://github.com/mykhaliev/agent-benchmark/releases")
+    print("  3. Download from: ")
+    print("     https://github.com/mykhaliev/agent-benchmark/releases")
     sys.exit(1)
 
 
@@ -169,9 +171,9 @@ def run_scenario(
         print(f"Available scenarios: {', '.join(list_scenarios())}")
         return False
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Running scenario: {scenario_file.name}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     # Get agent-benchmark command
     ab_command, ab_cwd = find_agent_benchmark(config)

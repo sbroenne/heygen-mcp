@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:  # Allow manual triggers
 
 jobs:
   lint:
@@ -82,7 +83,7 @@ jobs:
           HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
         run: |
           if [ -n "$HEYGEN_API_KEY" ]; then
-            uv run pytest tests/ -v -k "not video_generation" --tb=short
+            uv run pytest tests/ -v -k "not video_generation" --ignore=tests/heygen_mcp_llm_tests --tb=short
           else
             echo "HEYGEN_API_KEY not set, skipping integration tests"
             echo "Add HEYGEN_API_KEY to repository secrets to enable integration tests"
