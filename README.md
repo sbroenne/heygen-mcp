@@ -318,6 +318,27 @@ uv run pytest tests/ -v
 uv run pytest tests/ -v -k "not video_generation"
 ```
 
+### LLM Integration Tests
+
+This project includes LLM-based tests using [agent-benchmark](https://github.com/mykhaliev/agent-benchmark) to validate that AI assistants can correctly understand and use the MCP tools.
+
+```bash
+cd tests/heygen_mcp_llm_tests
+
+# List available test scenarios
+python run_llm_tests.py --list
+
+# Run safe tests (read-only, no credits consumed)
+python run_llm_tests.py
+
+# Run a specific scenario
+python run_llm_tests.py -s user-credits-test
+```
+
+**Requirements:** Azure OpenAI endpoint (`AZURE_OPENAI_ENDPOINT`) and HeyGen API key (`HEYGEN_API_KEY`).
+
+See [tests/heygen_mcp_llm_tests/README.md](tests/heygen_mcp_llm_tests/README.md) for full documentation.
+
 ## Roadmap
 
 - [x] Tests (integration tests + MCP server smoke tests)
