@@ -67,6 +67,34 @@ scoop install uv
 
 For other installation methods, see the [uv documentation](https://github.com/astral-sh/uv).
 
+### Install from PyPI
+
+Install the package directly using pip or uv:
+
+```bash
+# Using pip
+pip install heygen-mcp-sbroenne
+
+# Using uv (recommended)
+uv pip install heygen-mcp-sbroenne
+
+# Or run directly without installing (uvx)
+uvx heygen-mcp-sbroenne
+```
+
+### Install from GitHub Releases
+
+Download pre-built packages from [GitHub Releases](https://github.com/sbroenne/heygen-mcp/releases):
+
+1. Download the `.whl` or `.tar.gz` file from the latest release
+2. Install with pip:
+   ```bash
+   pip install heygen_mcp_sbroenne-*.whl
+   ```
+
+For the VS Code extension, download the `.vsix` file and install via:
+- VS Code → Extensions → `...` menu → "Install from VSIX..."
+
 ## Usage
 
 ### VS Code Extension (Recommended)
