@@ -1,0 +1,78 @@
+# Video Generation Test
+# Tests the 'videos' MCP tool - full video generation workflow
+# WARNING: This test CONSUMES API CREDITS!
+# Only run manually when you want to test the full video generation flow.
+
+criteria:
+  success_rate: 1
+
+providers:
+  - name: azure-openai-gpt41
+    type: AZURE
+    auth_type: entra_id
+    model: gpt-4.1
+    baseUrl: "{{AZURE_OPENAI_ENDPOINT}}"
+    version: 2025-01-01-preview
+
+servers:
+  - name: heygen-mcp
+    type: stdio
+    command: "{{SERVER_COMMAND}}"
+    server_delay: 10s
+    env:
+      HEYGEN_API_KEY: "{{HEYGEN_API_KEY}}"
+
+agents:
+  - name: gpt41-agent
+    servers:
+      - name: heygen-mcp
+    provider: azure-openai-gpt41
+
+settings:
+  verbose: true
+  max_iterations: 25
+
+sessions:
+  - name: "Video Generation Workflow"
+    tests:
+      - name: "List existing videos"
+        prompt: |
+          List all videos in my HeyGen account.
+          Report how many videos exist and the status of the most recent one.
+        assertions:
+          - type: no_hallucinated_tools
+          - type: tool_called
+            tool: videos
+          - type: output_regex
+            pattern: "(?i)(video|status|\\d+)"
+
+      - name: "Generate avatar video"
+        prompt: |
+          Generate a short HeyGen video with the following steps:
+          1. List available avatars and pick a public avatar (one with 'public' in the ID)
+          2. List available voices and pick an English voice
+          3. Generate a video with the avatar saying "Hello! This is an automated test video created by the LLM test framework."
+          4. Use 1280x720 dimensions
+          5. Report the video ID that was generated
+        assertions:
+          - type: no_hallucinated_tools
+          - type: tool_called
+            tool: avatars
+          - type: tool_called
+            tool: voices
+          - type: tool_called
+            tool: videos
+          - type: output_regex
+            pattern: "(?i)(video|id|generated|created)"
+
+      - name: "Check video status"
+        prompt: |
+          1. List the videos in my account
+          2. Check the status of the most recently created video
+          3. Report the video ID and its current status (pending, processing, completed, or failed)
+        assertions:
+          - type: no_hallucinated_tools
+          - type: tool_called
+            tool: videos
+          - type: output_regex
+            pattern: "(?i)(status|pending|processing|completed|failed)"

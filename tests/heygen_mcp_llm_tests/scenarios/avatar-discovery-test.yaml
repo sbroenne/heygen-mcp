@@ -1,0 +1,75 @@
+# Avatar Discovery Test
+# Tests the 'avatars' MCP tool - listing and getting avatar details
+# Safe test: Does not consume credits or modify data
+
+criteria:
+  success_rate: 1
+
+providers:
+  - name: azure-openai-gpt41
+    type: AZURE
+    auth_type: entra_id
+    model: gpt-4.1
+    baseUrl: "{{AZURE_OPENAI_ENDPOINT}}"
+    version: 2025-01-01-preview
+
+servers:
+  - name: heygen-mcp
+    type: stdio
+    command: "{{SERVER_COMMAND}}"
+    server_delay: 10s
+    env:
+      HEYGEN_API_KEY: "{{HEYGEN_API_KEY}}"
+
+agents:
+  - name: gpt41-agent
+    servers:
+      - name: heygen-mcp
+    provider: azure-openai-gpt41
+
+settings:
+  verbose: true
+  max_iterations: 15
+
+sessions:
+  # Separate sessions ensure each test starts fresh (no shared context)
+  - name: "Avatar Listing"
+    tests:
+      - name: "List all avatars"
+        prompt: |
+          List all available avatars in my HeyGen account.
+          Tell me the total count of avatars available.
+          Show me the names of the first 5 avatars.
+        assertions:
+          - type: no_hallucinated_tools
+          - type: tool_called
+            tool: avatars
+          - type: output_regex
+            pattern: "(?i)(avatar|total|count|\\d+)"
+
+  - name: "Avatar Details"
+    tests:
+      - name: "Get avatar details"
+        prompt: |
+          1. First list the available avatars
+          2. Then get the detailed information for the first avatar you find
+          3. Report the avatar's ID, name, and gender
+        assertions:
+          - type: no_hallucinated_tools
+          - type: tool_called
+            tool: avatars
+          - type: output_regex
+            pattern: "(?i)(id|name|gender|male|female)"
+
+  - name: "Avatar Groups"
+    tests:
+      - name: "List avatar groups"
+        prompt: |
+          List all avatar groups in my HeyGen account, including public groups.
+          Report how many groups are available and the name of the first group.
+        assertions:
+          - type: no_hallucinated_tools
+          - type: tool_called
+            tool: avatars
+          - type: output_regex
+            pattern: "(?i)(group|public|private|\\d+)"

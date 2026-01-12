@@ -1,0 +1,47 @@
+# Asset Listing Test
+# Tests the 'assets' MCP tool - listing assets
+# Safe test: Does not consume credits or modify data
+
+criteria:
+  success_rate: 1
+
+providers:
+  - name: azure-openai-gpt41
+    type: AZURE
+    auth_type: entra_id
+    model: gpt-4.1
+    baseUrl: "{{AZURE_OPENAI_ENDPOINT}}"
+    version: 2025-01-01-preview
+
+servers:
+  - name: heygen-mcp
+    type: stdio
+    command: "{{SERVER_COMMAND}}"
+    server_delay: 10s
+    env:
+      HEYGEN_API_KEY: "{{HEYGEN_API_KEY}}"
+
+agents:
+  - name: gpt41-agent
+    servers:
+      - name: heygen-mcp
+    provider: azure-openai-gpt41
+
+settings:
+  verbose: true
+  max_iterations: 10
+
+sessions:
+  - name: "Asset Discovery"
+    tests:
+      - name: "List all assets"
+        prompt: |
+          List all assets (images, videos, audios) in my HeyGen account.
+          Report how many assets I have.
+          If there are any, describe the first asset's type and ID.
+        assertions:
+          - type: no_hallucinated_tools
+          - type: tool_called
+            tool: assets
+          - type: output_regex
+            pattern: "(?i)(asset|image|video|audio|\\d+|none|found)"

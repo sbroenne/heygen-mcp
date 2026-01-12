@@ -1,0 +1,77 @@
+# Voice Listing Test
+# Tests the 'voices' MCP tool - listing available voices
+# Safe test: Does not consume credits or modify data
+
+criteria:
+  success_rate: 1
+
+providers:
+  - name: azure-openai-gpt41
+    type: AZURE
+    auth_type: entra_id
+    model: gpt-4.1
+    baseUrl: "{{AZURE_OPENAI_ENDPOINT}}"
+    version: 2025-01-01-preview
+
+servers:
+  - name: heygen-mcp
+    type: stdio
+    command: "{{SERVER_COMMAND}}"
+    server_delay: 10s
+    env:
+      HEYGEN_API_KEY: "{{HEYGEN_API_KEY}}"
+
+agents:
+  - name: gpt41-agent
+    servers:
+      - name: heygen-mcp
+    provider: azure-openai-gpt41
+
+settings:
+  verbose: true
+  max_iterations: 10
+
+sessions:
+  # Separate sessions ensure each test starts fresh (no shared context)
+  - name: "Voice Listing"
+    tests:
+      - name: "List available voices"
+        prompt: |
+          List all available voices in HeyGen.
+          Tell me the total number of voices available.
+        assertions:
+          - type: no_hallucinated_tools
+          - type: tool_called
+            tool: voices
+          - type: output_regex
+            pattern: "(?i)(voice|\\d+|available)"
+
+  - name: "English Voice Discovery"
+    tests:
+      - name: "Find English voices"
+        prompt: |
+          List all available HeyGen voices and find voices that speak English.
+          Report the names of 3 English voices.
+        assertions:
+          - type: no_hallucinated_tools
+          - type: tool_called
+            tool: voices
+          - type: output_regex
+            pattern: "(?i)(english|voice|name)"
+
+  - name: "Voice Details"
+    tests:
+      - name: "Explore voice details"
+        prompt: |
+          Get the list of HeyGen voices.
+          For the first voice in the list, report:
+          - Voice name
+          - Voice ID
+          - Language
+          - Gender (if available)
+        assertions:
+          - type: no_hallucinated_tools
+          - type: tool_called
+            tool: voices
+          - type: output_regex
+            pattern: "(?i)(voice|id|language)"

@@ -1,14 +1,38 @@
-# Heygen MCP Server
+# HeyGen MCP Server
 
-![Heygen Logo](heygen_logo.png)
+[![VS Code Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/sbroenne.heygen-mcp?label=VS%20Code%20Installs)](https://marketplace.visualstudio.com/items?itemName=sbroenne.heygen-mcp)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/heygen-mcp-sbroenne?label=PyPI%20Downloads)](https://pypi.org/project/heygen-mcp-sbroenne/)
+[![GitHub Downloads](https://img.shields.io/github/downloads/sbroenne/heygen-mcp/total?label=GitHub%20Downloads)](https://github.com/sbroenne/heygen-mcp/releases)
+
+[![CI](https://github.com/sbroenne/heygen-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/sbroenne/heygen-mcp/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/sbroenne/heygen-mcp)](https://github.com/sbroenne/heygen-mcp/releases/latest)
+[![PyPI Version](https://img.shields.io/pypi/v/heygen-mcp-sbroenne)](https://pypi.org/project/heygen-mcp-sbroenne/)
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.10--3.13-blue.svg)](https://www.python.org/downloads/)
+[![Built with Copilot](https://img.shields.io/badge/Built%20with-GitHub%20Copilot-0366d6.svg)](https://copilot.github.com/)
+
+![HeyGen Logo](heygen_logo.png)
 
 > ⚠️ **Disclaimer**: This is a community fork of the original HeyGen MCP server, which appears to be abandoned. This is **not** an official HeyGen repository. Use at your own discretion.
 
-The HeyGen MCP server enables any MCP Client like Claude Desktop or Agents to use the [HeyGen API](https://docs.heygen.com/) to generate avatars and videos.
+**Generate AI Videos with Natural Language** - A Model Context Protocol (MCP) server for HeyGen API integration with AI assistants.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+The HeyGen MCP server enables AI assistants (GitHub Copilot, Claude, ChatGPT) to generate AI avatar videos, manage templates, and work with assets through natural language commands.
 
-Note: This project is in early development. While we welcome community feedback and contributions, please be aware that official support is limited.
+## 🚀 Quick Start (1 Minute)
+
+**Requirements:** Python 3.10+ | HeyGen API Key ([get one here](https://app.heygen.com/settings?nav=API) - 10 free credits/month)
+
+### ⭐ Recommended: VS Code Extension (One-Click Setup)
+
+**Fastest way to get started - everything configured automatically:**
+
+**[Install from VS Code Marketplace →](https://marketplace.visualstudio.com/items?itemName=sbroenne.heygen-mcp)**
+
+The extension handles server registration and API key configuration automatically!
+
+---
 
 ## Installation
 
@@ -17,33 +41,54 @@ Note: This project is in early development. While we welcome community feedback 
 - Python 3.10 or higher
 - A Heygen API key (get one from [Heygen](https://www.heygen.com/)). Includes 10 Free Credits per Month
 
-### Installing uv
+### Install from PyPI
 
-uv is a fast Python package installer and resolver that we recommend for installing this package.
-
-**macOS or Linux:**
+Install the package directly using pip or uv:
 
 ```bash
-# Install with the official installer script
-curl -LsSf https://astral.sh/uv/install.sh | sh
+# Using pip
+pip install heygen-mcp-sbroenne
 
-# Or via Homebrew (macOS)
-brew install uv
+# Using uv (recommended)
+uv pip install heygen-mcp-sbroenne
+
+# Or run directly without installing (uvx)
+uvx heygen-mcp-sbroenne
 ```
 
-**Windows:**
+### Install from GitHub Releases
 
-```powershell
-# Install with the official installer script in PowerShell
-irm https://astral.sh/uv/install.ps1 | iex
+Download pre-built packages from [GitHub Releases](https://github.com/sbroenne/heygen-mcp/releases):
 
-# Or via Scoop
-scoop install uv
-```
+1. Download the `.whl` or `.tar.gz` file from the latest release
+2. Install with pip:
+   ```bash
+   pip install heygen_mcp_sbroenne-*.whl
+   ```
 
-For other installation methods, see the [uv documentation](https://github.com/astral-sh/uv).
+For the VS Code extension, download the `.vsix` file and install via:
+- VS Code → Extensions → `...` menu → "Install from VSIX..."
 
 ## Usage
+
+### VS Code Extension (Recommended)
+
+The easiest way to use HeyGen MCP with VS Code is through the community VS Code extension:
+
+1. **Install the extension**:
+   - [Install from VS Code Marketplace →](https://marketplace.visualstudio.com/items?itemName=sbroenne.heygen-mcp)
+   - Or search for "sbroenne.heygen-mcp" in VS Code Extensions (Ctrl+Shift+X)
+
+2. **Configure your API key**:
+   - Use Command Palette (Ctrl+Shift+P)
+   - Search for "HeyGen: Configure API Key"
+   - Enter your API key
+
+3. **Start using it**:
+   - The HeyGen MCP server will automatically be available to your AI assistant
+   - Ask your AI assistant to generate videos, manage templates, etc.
+
+See [vscode-extension/README.md](vscode-extension/README.md) for more details.
 
 ### Quickstart with Claude Desktop
 
@@ -75,7 +120,7 @@ For other installation methods, see the [uv documentation](https://github.com/as
 
 If you're using Windows, you'll need to enable "Developer Mode" in Claude Desktop to use the MCP server. Click "Help" in the hamburger menu at the top left and select "Enable Developer Mode".
 
-### Using with VS Code
+### Using with VS Code (Manual Configuration)
 
 Add the following to your VS Code settings (`.vscode/mcp.json`):
 
@@ -173,24 +218,20 @@ The server provides 7 resource-based tools, each with multiple actions:
 
 | Action | Parameters | Description |
 |--------|------------|-------------|
-| `generate` | `avatar_id`, `input_text`, `voice_id`, `title` (optional) | Create a new avatar video |
-| `generate_iv` | `image_key`, `script`, `voice_id`, `video_title`, `audio_url` (opt), `audio_asset_id` (opt), `custom_motion_prompt` (opt), `enhance_custom_motion_prompt` (opt) | Create Avatar IV video from photo with AI motion |
+| `list` | `token` (optional) | List all videos with pagination |
+| `generate` | `avatar_id`, `input_text`, `voice_id`, `title` (optional), background options | Create a new avatar video |
+| `generate_iv` | `image_key`, `script`, `voice_id`, `video_title`, motion options | Create Avatar IV video from photo |
 | `status` | `video_id` | Check video processing status |
 
-**Avatar IV Videos**: Use `generate_iv` to create photorealistic avatar videos from a single photo. First upload a photo using `assets(action="upload")` to get an `image_key`, then generate the video with AI-powered motion and expressions.
+**✨ Video Background Support** - Generate videos with color, image, or video backgrounds. See [Video Backgrounds Guide](docs/VIDEO_BACKGROUNDS.md) for details.
 
-#### `templates` - Template Management (V3 API)
+#### `templates` - Template Management
 
 | Action | Parameters | Description |
 |--------|------------|-------------|
 | `list` | - | Get all templates in your account |
-| `get` | `template_id` | Get template details including **dynamic/custom variables** and scenes |
+| `get` | `template_id` | Get template details including variables |
 | `generate` | `template_id`, `variables` (optional), `title`, `test`, `caption` | Create video from template |
-
-The `get` action uses the V3 template API which returns detailed variable information for each scene, including:
-- **Text variables**: Customizable text content with content property
-- **Avatar variables**: Avatar selection with avatar_id, voice_id, and script
-- **Image/Video/Audio variables**: Media replacement with url, asset_id, and fit properties
 
 #### `assets` - Asset Management
 
@@ -204,13 +245,9 @@ The `get` action uses the V3 template API which returns detailed variable inform
 
 | Action | Parameters | Description |
 |--------|------------|-------------|
-| `list` | - | Get all folders in your account |
-| `create` | `name`, `parent_id` (optional), `project_type` (optional) | Create a new folder |
-| `rename` | `folder_id`, `name` | Rename an existing folder |
-| `trash` | `folder_id` | Move a folder to trash |
-| `restore` | `folder_id` | Restore a folder from trash |
-
-**Project types for folders:** `avatar_video`, `personalized_video`, `template`, `talking_photo`, `photo_avatar`
+| `list` | - | Get all folders |
+| `create` | `name` | Create a new folder |
+| `delete` | `folder_id` | Delete a folder |
 
 **Example Usage:**
 
@@ -226,39 +263,6 @@ avatars(action="get", avatar_id="avatar_123")
 
 # Generate a video
 videos(action="generate", avatar_id="...", input_text="Hello!", voice_id="...")
-
-# Upload a photo and generate Avatar IV video
-assets(action="upload", file_path="/path/to/photo.jpg")  # Returns image_key
-videos(
-    action="generate_iv",
-    image_key="...",  # From upload
-    video_title="My Avatar IV Video",
-    script="Hello, this is my AI avatar speaking!",
-    voice_id="...",
-    custom_motion_prompt="Speak confidently with natural gestures"
-)
-
-# List folders
-folders(action="list")
-
-# Create a folder for templates
-folders(action="create", name="My Templates", project_type="template")
-
-# Get template details with V3 API (includes variables per scene)
-templates(action="get", template_id="template_123")
-
-# Generate video from template with variable replacements
-templates(
-    action="generate",
-    template_id="template_123",
-    variables={
-        "first_name": {
-            "name": "first_name",
-            "type": "text",
-            "properties": {"content": "John"}
-        }
-    }
-)
 ```
 
 ## Development
@@ -317,8 +321,7 @@ uv run pytest tests/ -v -k "not video_generation"
 ## Roadmap
 
 - [x] Tests (integration tests + MCP server smoke tests)
-- [x] Template API Support (V3 with dynamic/custom variables)
-- [x] Folder Management API Support
+- [x] Template API Support
 - [x] CI/CD (GitHub Actions + PyPI release)
 - [ ] Photo Avatar APIs Support
 - [ ] SSE And Remote MCP Server with OAuth Flow
@@ -330,6 +333,13 @@ uv run pytest tests/ -v -k "not video_generation"
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 For maintainers: see the [Publishing Guide](docs/PUBLISHING.md) for release instructions.
+
+## Related Projects
+
+- **[Windows MCP Servers](https://windowsmcpserver.dev/)** - Collection of Windows-focused MCP servers
+- **[ExcelMcp](https://github.com/sbroenne/mcp-server-excel)** - MCP Server for Microsoft Excel automation
+- **[OBS Studio MCP](https://github.com/sbroenne/mcp-server-obs)** - MCP Server for OBS Studio screen recording
+- **[agent-benchmark](https://github.com/mykhaliev/agent-benchmark)** - Framework for testing LLM + MCP integrations
 
 ## License
 

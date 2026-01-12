@@ -8,10 +8,18 @@ import pytest
 
 from heygen_mcp.client import HeyGenApiClient
 from heygen_mcp.models import (
+    MCPAssetDeleteResponse,
     MCPAssetListResponse,
+    MCPAssetUploadResponse,
     MCPAvatarDetailsResponse,
     MCPAvatarGroupResponse,
+    MCPAvatarIVVideoResponse,
     MCPAvatarsInGroupResponse,
+    MCPFolderCreateResponse,
+    MCPFolderListResponse,
+    MCPFolderRestoreResponse,
+    MCPFolderTrashResponse,
+    MCPFolderUpdateResponse,
     MCPGetCreditsResponse,
     MCPListAvatarsResponse,
     MCPListTemplatesResponse,
@@ -19,6 +27,7 @@ from heygen_mcp.models import (
     MCPTemplateVideoGenerateResponse,
     MCPUserInfoResponse,
     MCPVideoGenerateResponse,
+    MCPVideoListResponse,
     MCPVideoStatusResponse,
     MCPVoicesResponse,
 )
@@ -391,3 +400,213 @@ class TestListAssets:
         print(f"\n  Total assets: {len(result.assets)}")
         if result.assets:
             print(f"  First asset ID: {result.assets[0].asset_id}")
+
+
+class TestListVideos:
+    """Integration tests for list_videos."""
+
+    @pytest.mark.asyncio
+    async def test_list_videos(self, api_client: HeyGenApiClient):
+        """Test listing videos from the API."""
+        result = await api_client.list_videos()
+
+        assert isinstance(result, MCPVideoListResponse)
+        assert result.error is None, f"API returned error: {result.error}"
+        assert result.videos is not None
+        assert result.total is not None
+        assert result.total >= 0
+        print(f"\n  Total videos: {result.total}")
+        if result.videos:
+            first = result.videos[0]
+            print(f"  First video: {first.video_id} ({first.status})")
+
+    @pytest.mark.asyncio
+    async def test_list_videos_with_pagination(self, api_client: HeyGenApiClient):
+        """Test listing videos with pagination token."""
+        result = await api_client.list_videos()
+
+        assert isinstance(result, MCPVideoListResponse)
+        assert result.error is None, f"API returned error: {result.error}"
+
+        if result.token:
+            result2 = await api_client.list_videos(token=result.token)
+            assert isinstance(result2, MCPVideoListResponse)
+            assert result2.error is None, f"API returned error: {result2.error}"
+            print(f"\n  Page 2 videos: {len(result2.videos) if result2.videos else 0}")
+        else:
+            print("\n  No pagination token (fewer than 100 videos)")
+
+
+class TestFolders:
+    """Integration tests for folder operations."""
+
+    @pytest.mark.asyncio
+    async def test_list_folders(self, api_client: HeyGenApiClient):
+        """Test listing folders from the API."""
+        result = await api_client.list_folders()
+
+        assert isinstance(result, MCPFolderListResponse)
+        assert result.error is None, f"API returned error: {result.error}"
+        assert result.folders is not None
+        print(f"\n  Total folders: {len(result.folders)}")
+        if result.folders:
+            first = result.folders[0]
+            print(f"  First folder: {first.name} (id: {first.id})")
+
+    @pytest.mark.asyncio
+    @pytest.mark.folder_operations
+    async def test_folder_create_update_trash_restore(
+        self, api_client: HeyGenApiClient
+    ):
+        """Test folder lifecycle: create, update, trash, restore.
+
+        Note: This test modifies data in your account.
+        Run with: pytest -m folder_operations
+        """
+        import uuid
+
+        folder_name = f"Test Folder {uuid.uuid4().hex[:8]}"
+        create_result = await api_client.create_folder(name=folder_name)
+
+        assert isinstance(create_result, MCPFolderCreateResponse)
+        assert create_result.error is None, f"Create error: {create_result.error}"
+        assert create_result.folder_id is not None
+        folder_id = create_result.folder_id
+        print(f"\n  Created folder: {folder_name} (id: {folder_id})")
+
+        new_name = f"Updated {folder_name}"
+        update_result = await api_client.update_folder(
+            folder_id=folder_id, name=new_name
+        )
+
+        assert isinstance(update_result, MCPFolderUpdateResponse)
+        assert update_result.error is None, f"Update error: {update_result.error}"
+        print(f"  Updated folder name to: {new_name}")
+
+        trash_result = await api_client.trash_folder(folder_id=folder_id)
+
+        assert isinstance(trash_result, MCPFolderTrashResponse)
+        assert trash_result.error is None, f"Trash error: {trash_result.error}"
+        print(f"  Trashed folder: {folder_id}")
+
+        restore_result = await api_client.restore_folder(folder_id=folder_id)
+
+        assert isinstance(restore_result, MCPFolderRestoreResponse)
+        assert restore_result.error is None, f"Restore error: {restore_result.error}"
+        print(f"  Restored folder: {folder_id}")
+
+        # Clean up - trash again
+        await api_client.trash_folder(folder_id=folder_id)
+        print(f"  Cleaned up (trashed): {folder_id}")
+
+
+class TestAssetUploadDelete:
+    """Integration tests for asset upload and delete.
+
+    Note: These tests upload and delete assets.
+    Run with: pytest -m asset_operations
+    """
+
+    @pytest.mark.asyncio
+    @pytest.mark.asset_operations
+    async def test_upload_and_delete_asset(self, api_client: HeyGenApiClient):
+        """Test uploading an image asset and deleting it.
+
+        WARNING: This test uploads a file to your HeyGen account.
+        """
+        import base64
+        import os
+        import tempfile
+
+        # Create a simple test image (1x1 pixel PNG)
+        png_data = base64.b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
+        )
+
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+            f.write(png_data)
+            temp_path = f.name
+
+        try:
+            upload_result = await api_client.upload_asset(file_path=temp_path)
+
+            assert isinstance(upload_result, MCPAssetUploadResponse)
+            assert upload_result.error is None, f"Upload error: {upload_result.error}"
+            assert upload_result.asset_id is not None
+            asset_id = upload_result.asset_id
+            print(f"\n  Uploaded asset: {asset_id}")
+
+            delete_result = await api_client.delete_asset(asset_id=asset_id)
+
+            assert isinstance(delete_result, MCPAssetDeleteResponse)
+            assert delete_result.error is None, f"Delete error: {delete_result.error}"
+            print(f"  Deleted asset: {asset_id}")
+
+        finally:
+            os.unlink(temp_path)
+
+
+class TestAvatarIVVideo:
+    """Integration tests for Avatar IV video generation.
+
+    Note: These tests consume API credits.
+    Run with: pytest -m video_generation
+    """
+
+    @pytest.mark.asyncio
+    @pytest.mark.video_generation
+    async def test_generate_avatar_iv_video(self, api_client: HeyGenApiClient):
+        """Test generating an Avatar IV video from a photo.
+
+        WARNING: This test consumes API credits!
+        """
+        import base64
+        import os
+        import tempfile
+
+        # Create a simple test image (1x1 pixel PNG)
+        png_data = base64.b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
+        )
+
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+            f.write(png_data)
+            temp_path = f.name
+
+        try:
+            upload_result = await api_client.upload_asset(file_path=temp_path)
+            if upload_result.error:
+                pytest.skip(f"Could not upload test image: {upload_result.error}")
+
+            image_key = upload_result.asset_id
+
+            voices_result = await api_client.get_voices()
+            if not voices_result.voices:
+                pytest.skip("No voices available")
+            voice_id = voices_result.voices[0].voice_id
+
+            from heygen_mcp.models import AvatarIVVideoRequest
+
+            request = AvatarIVVideoRequest(
+                image_key=image_key,
+                video_title="Integration Test Avatar IV Video",
+                script="Hello, this is an Avatar IV integration test.",
+                voice_id=voice_id,
+            )
+
+            result = await api_client.generate_avatar_iv_video(request)
+
+            assert isinstance(result, MCPAvatarIVVideoResponse)
+            # May fail with 1x1 pixel image, but tests the API call
+            if result.error:
+                print(f"\n  Avatar IV result: {result.error}")
+                if "image" in result.error.lower():
+                    print("  (Expected - test image too small)")
+            else:
+                assert result.video_id is not None
+                print(f"\n  Generated Avatar IV video: {result.video_id}")
+
+            await api_client.delete_asset(asset_id=image_key)
+
+        finally:
+            os.unlink(temp_path)

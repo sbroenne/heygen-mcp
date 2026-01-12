@@ -20,7 +20,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Install build dependencies
         run: uv sync --dev
@@ -48,7 +48,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Install package from wheel
         run: |
@@ -59,31 +59,10 @@ jobs:
           python -c "from heygen_mcp.server import mcp; print('Import successful')"
           heygen-mcp-sbroenne --help
 
-  publish-testpypi:
-    name: Publish to TestPyPI
-    runs-on: ubuntu-latest
-    needs: [build, test]
-    environment:
-      name: testpypi
-      url: https://test.pypi.org/project/heygen-mcp-sbroenne/
-    permissions:
-      id-token: write
-    steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist/
-
-      - name: Publish to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
-
   publish-pypi:
     name: Publish to PyPI
     runs-on: ubuntu-latest
-    needs: [build, test, publish-testpypi]
+    needs: [build, test]
     environment:
       name: pypi
       url: https://pypi.org/project/heygen-mcp-sbroenne/

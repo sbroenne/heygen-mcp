@@ -1,0 +1,63 @@
+# Template Workflow Test
+# Tests the 'templates' MCP tool - listing and examining templates
+# Safe test: Does not consume credits or modify data
+
+criteria:
+  success_rate: 1
+
+providers:
+  - name: azure-openai-gpt41
+    type: AZURE
+    auth_type: entra_id
+    model: gpt-4.1
+    baseUrl: "{{AZURE_OPENAI_ENDPOINT}}"
+    version: 2025-01-01-preview
+
+servers:
+  - name: heygen-mcp
+    type: stdio
+    command: "{{SERVER_COMMAND}}"
+    server_delay: 10s
+    env:
+      HEYGEN_API_KEY: "{{HEYGEN_API_KEY}}"
+
+agents:
+  - name: gpt41-agent
+    servers:
+      - name: heygen-mcp
+    provider: azure-openai-gpt41
+
+settings:
+  verbose: true
+  max_iterations: 15
+
+sessions:
+  # Separate sessions ensure each test starts fresh (no shared context)
+  - name: "Template Listing"
+    tests:
+      - name: "List templates"
+        prompt: |
+          List all video templates available in my HeyGen account.
+          Report how many templates exist.
+          If there are any, show the name of the first template.
+        assertions:
+          - type: no_hallucinated_tools
+          - type: tool_called
+            tool: templates
+          - type: output_regex
+            pattern: "(?i)(template|\\d+|found|none|available)"
+
+  - name: "Template Details"
+    tests:
+      - name: "Get template details"
+        prompt: |
+          1. List all templates in my HeyGen account
+          2. If there are any templates, get the details of the first one
+          3. Report what variables the template uses (if any)
+          4. If there are no templates, just report that none were found
+        assertions:
+          - type: no_hallucinated_tools
+          - type: tool_called
+            tool: templates
+          - type: output_regex
+            pattern: "(?i)(template|variable|scene|none|found)"

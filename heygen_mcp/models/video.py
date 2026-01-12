@@ -24,11 +24,34 @@ class Voice(BaseModel):
     voice_id: str
 
 
+class Background(BaseModel):
+    """Background configuration for video generation.
+    
+    Supports three background types:
+    - color: Solid color background using hex code
+    - image: Static image background
+    - video: Video background with playback options
+    """
+
+    type: str = Field(..., description="Background type: 'color', 'image', or 'video'")
+    value: Optional[str] = Field(None, description="Hex color code for type='color'")
+    url: Optional[str] = Field(None, description="URL for image or video")
+    image_asset_id: Optional[str] = Field(None, description="Asset ID for type='image'")
+    video_asset_id: Optional[str] = Field(None, description="Asset ID for type='video'")
+    play_style: Optional[str] = Field(
+        None,
+        description="Video playback style: 'fit_to_scene', 'freeze', 'loop', or 'full_video'"
+    )
+
+    model_config = {"extra": "forbid"}
+
+
 class VideoInput(BaseModel):
     """Input configuration for a video scene."""
 
     character: Character
     voice: Voice
+    background: Optional[Background] = None
 
 
 class Dimension(BaseModel):
@@ -157,3 +180,41 @@ class MCPAvatarIVVideoResponse(BaseHeyGenResponse):
     """MCP response wrapper for Avatar IV video generation."""
 
     video_id: Optional[str] = None
+
+
+# ==================== Video List Models ====================
+
+
+class VideoListItem(BaseModel):
+    """Video item in the video list response."""
+
+    video_id: str
+    status: str
+    video_title: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+    video_url: Optional[str] = None
+    gif_url: Optional[str] = None
+    duration: Optional[float] = None
+    created_at: Optional[int] = None
+    callback_id: Optional[str] = None
+
+
+class VideoListData(BaseModel):
+    """Data returned from video list endpoint."""
+
+    videos: List[VideoListItem] = Field(default_factory=list)
+    token: Optional[str] = None
+
+
+class VideoListResponse(BaseHeyGenResponse):
+    """API response for video list endpoint."""
+
+    data: Optional[VideoListData] = None
+
+
+class MCPVideoListResponse(BaseHeyGenResponse):
+    """MCP response wrapper for video list."""
+
+    videos: Optional[List[VideoListItem]] = None
+    total: Optional[int] = None
+    token: Optional[str] = None

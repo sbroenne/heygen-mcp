@@ -1,0 +1,118 @@
+# Template Configuration Reference
+# This file shows all available options for test scenario YAML files.
+# It is NOT a runnable test - copy and modify for new scenarios.
+
+# Pass criteria - what percentage of tests must pass
+criteria:
+  success_rate: 1  # 1 = 100%, 0.9 = 90%, etc.
+
+# LLM Providers Configuration
+providers:
+  # Azure OpenAI example
+  - name: azure-openai-gpt41
+    type: AZURE
+    auth_type: entra_id          # Options: entra_id, api_key
+    model: gpt-4.1               # Model deployment name
+    baseUrl: "{{AZURE_OPENAI_ENDPOINT}}"
+    version: 2025-01-01-preview  # API version
+
+  # OpenAI example (if using OpenAI directly)
+  # - name: openai-gpt4
+  #   type: OPENAI
+  #   auth_type: api_key
+  #   model: gpt-4-turbo
+  #   api_key: "{{OPENAI_API_KEY}}"
+
+  # Judge provider for clarification detection (optional)
+  # - name: azure-openai-judge
+  #   type: AZURE
+  #   auth_type: entra_id
+  #   model: gpt-4.1
+  #   baseUrl: "{{AZURE_OPENAI_ENDPOINT}}"
+  #   version: 2025-01-01-preview
+
+# MCP Servers to connect
+servers:
+  - name: heygen-mcp
+    type: stdio                  # Communication type
+    command: "{{SERVER_COMMAND}}"  # Template variable set by runner
+    server_delay: 10s            # Wait for server to initialize
+    env:                         # Environment variables for the server
+      HEYGEN_API_KEY: "{{HEYGEN_API_KEY}}"
+
+# Agent configurations
+agents:
+  - name: gpt41-agent
+    servers:
+      - name: heygen-mcp        # Reference to server above
+    provider: azure-openai-gpt41  # Reference to provider above
+    # Optional: clarification detection
+    # clarification_detection:
+    #   enabled: true
+    #   judge_provider: azure-openai-judge
+
+# Global settings
+settings:
+  verbose: true                  # Detailed output
+  max_iterations: 15             # Max tool calls per test
+
+# Test sessions - groups of related tests
+sessions:
+  - name: "Session Name"
+    tests:
+      - name: "Test Name"
+        prompt: |
+          Natural language prompt describing what to do.
+          Be specific about expected actions.
+        assertions:
+          # Tool was called
+          - type: tool_called
+            tool: tool_name
+
+          # Tool parameter value check
+          - type: tool_param_equals
+            tool: tool_name
+            param: param_name
+            value: expected_value
+
+          # Output contains pattern (case insensitive)
+          - type: output_regex
+            pattern: "(?i)(word1|word2)"
+
+          # No fake tools were called
+          - type: no_hallucinated_tools
+
+          # No API rate limits hit
+          - type: no_rate_limit_errors
+
+          # Agent didn't ask clarifying questions
+          - type: no_clarification_questions
+
+          # Performance check
+          - type: max_latency_ms
+            value: 30000
+
+          # Any of these conditions (OR)
+          - type: anyOf
+            assertions:
+              - type: tool_called
+                tool: option_a
+              - type: tool_called
+                tool: option_b
+
+          # All of these conditions (AND)
+          - type: allOf
+            assertions:
+              - type: tool_called
+                tool: required_tool
+              - type: output_regex
+                pattern: "success"
+
+# Template Variables Available:
+# {{AZURE_OPENAI_ENDPOINT}} - Azure OpenAI endpoint from env
+# {{HEYGEN_API_KEY}} - HeyGen API key from env
+# {{SERVER_COMMAND}} - MCP server command (set by runner)
+# {{TEST_DIR}} - Directory containing scenario files
+# {{TEST_RESULTS_PATH}} - Directory for output files
+# {{TEMP_DIR}} - System temp directory
+# {{randomValue type='UUID'}} - Generate unique ID (runtime)

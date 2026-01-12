@@ -12,6 +12,7 @@ from mcp.server.fastmcp import FastMCP
 from heygen_mcp.client import HeyGenApiClient
 from heygen_mcp.models import (
     AvatarIVVideoRequest,
+    Background,
     Character,
     Dimension,
     MCPAssetDeleteResponse,
@@ -33,6 +34,7 @@ from heygen_mcp.models import (
     MCPTemplateVideoGenerateResponse,
     MCPUserInfoResponse,
     MCPVideoGenerateResponse,
+    MCPVideoListResponse,
     MCPVideoStatusResponse,
     MCPVoicesResponse,
     VideoGenerateRequest,
@@ -211,22 +213,34 @@ async def avatars(
     name="videos",
     description=(
         "Manage HeyGen video generation. Actions: "
+        "'list' - get all videos in your account (optional token for pagination); "
         "'generate' - create a new avatar video (requires avatar_id, input_text, "
-        "voice_id; optional title); "
+        "voice_id; optional title, background_type, background_value, "
+        "background_image_asset_id, background_video_asset_id, background_play_style); "
         "'generate_iv' - create Avatar IV video from photo with AI motion "
         "(requires image_key, script, voice_id, video_title; optional audio_url, "
         "audio_asset_id, custom_motion_prompt, enhance_custom_motion_prompt); "
         "'status' - check video status (requires video_id). "
-        "Note: Video processing may take minutes to hours."
+        "Note: Video processing may take minutes to hours. "
+        "Background types: 'color' (solid), 'image', 'video'. "
+        "Video play styles: 'fit_to_scene', 'freeze', 'loop', 'full_video'."
     ),
 )
 async def videos(
-    action: Literal["generate", "generate_iv", "status"],
+    action: Literal["list", "generate", "generate_iv", "status"],
     video_id: str | None = None,
     avatar_id: str | None = None,
     input_text: str | None = None,
     voice_id: str | None = None,
     title: str = "",
+    # Pagination parameter
+    token: str | None = None,
+    # Background parameters
+    background_type: str | None = None,
+    background_value: str | None = None,
+    background_image_asset_id: str | None = None,
+    background_video_asset_id: str | None = None,
+    background_play_style: str | None = None,
     # Avatar IV specific parameters
     image_key: str | None = None,
     script: str | None = None,
@@ -235,13 +249,21 @@ async def videos(
     audio_asset_id: str | None = None,
     custom_motion_prompt: str | None = None,
     enhance_custom_motion_prompt: bool | None = None,
-) -> MCPVideoGenerateResponse | MCPVideoStatusResponse | MCPAvatarIVVideoResponse:
+) -> (
+    MCPVideoListResponse
+    | MCPVideoGenerateResponse
+    | MCPVideoStatusResponse
+    | MCPAvatarIVVideoResponse
+):
     """Manage video generation and status."""
     logger.info(f"videos action={action} video_id={video_id} avatar_id={avatar_id}")
     try:
         client = await get_api_client()
 
-        if action == "generate":
+        if action == "list":
+            return await client.list_videos(token=token)
+
+        elif action == "generate":
             if not avatar_id:
                 return MCPVideoGenerateResponse(
                     error="avatar_id is required for 'generate' action"
@@ -255,12 +277,60 @@ async def videos(
                     error="voice_id is required for 'generate' action"
                 )
 
+            # Build background object if background_type is provided
+            background = None
+            if background_type:
+                if background_type == "color":
+                    if not background_value:
+                        return MCPVideoGenerateResponse(
+                            error="background_value required for color background"
+                        )
+                    background = Background(
+                        type="color",
+                        value=background_value,
+                        url=None,
+                        image_asset_id=None,
+                        video_asset_id=None,
+                        play_style=None,
+                    )
+                elif background_type == "image":
+                    if not background_image_asset_id:
+                        return MCPVideoGenerateResponse(
+                            error="background_image_asset_id required for image"
+                        )
+                    background = Background(
+                        type="image",
+                        value=None,
+                        url=None,
+                        image_asset_id=background_image_asset_id,
+                        video_asset_id=None,
+                        play_style=None,
+                    )
+                elif background_type == "video":
+                    if not background_video_asset_id:
+                        return MCPVideoGenerateResponse(
+                            error="background_video_asset_id required for video"
+                        )
+                    background = Background(
+                        type="video",
+                        value=None,
+                        url=None,
+                        image_asset_id=None,
+                        video_asset_id=background_video_asset_id,
+                        play_style=background_play_style or "fit_to_scene",
+                    )
+                else:
+                    return MCPVideoGenerateResponse(
+                        error=f"Invalid background_type: {background_type}"
+                    )
+
             request = VideoGenerateRequest(
                 title=title,
                 video_inputs=[
                     VideoInput(
                         character=Character(avatar_id=avatar_id),
                         voice=Voice(input_text=input_text, voice_id=voice_id),
+                        background=background,
                     )
                 ],
                 dimension=Dimension(width=1280, height=720),
@@ -310,6 +380,8 @@ async def videos(
 
     except Exception as e:
         logger.error(f"videos action={action} error: {e}")
+        if action == "list":
+            return MCPVideoListResponse(error=str(e))
         if action == "status":
             return MCPVideoStatusResponse(error=str(e))
         if action == "generate_iv":
