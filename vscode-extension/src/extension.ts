@@ -2,47 +2,37 @@ import * as vscode from 'vscode';
 
 /**
  * HeyGen MCP Server VS Code Extension
- * 
+ *
  * This extension registers the HeyGen MCP server as an MCP server definition provider,
  * allowing VS Code's language model features to access HeyGen's API for video generation,
  * template management, avatar selection, and more.
  */
 
-interface HeyGenMcpServerDefinition extends vscode.McpServerDefinition {
-	label: string;
-	command?: string;
-	args?: string[];
-	env?: Record<string, string>;
-	cwd?: vscode.Uri;
-	version: string;
-}
-
 export function activate(context: vscode.ExtensionContext) {
 	const didChangeEmitter = new vscode.EventEmitter<void>();
-	
+
 	// Register the MCP server definition provider
 	const provider: vscode.McpServerDefinitionProvider = {
 		onDidChangeMcpServerDefinitions: didChangeEmitter.event,
-		
+
 		provideMcpServerDefinitions: async (_token: vscode.CancellationToken) => {
 			const config = vscode.workspace.getConfiguration('heygen-mcp');
 			const apiKey = config.get<string>('apiKey');
-			
+
 			const servers: vscode.McpServerDefinition[] = [];
-			
+
 			try {
 				// Create stdio server definition for heygen-mcp
 				// Always provide the server - resolveMcpServerDefinition will prompt for API key if needed
+				// Constructor: McpStdioServerDefinition(label, command, args?, env?, version?)
 				const serverDef = new vscode.McpStdioServerDefinition(
-					{
-						label: 'HeyGen MCP Server',
-						command: 'uvx',
-						args: ['heygen-mcp-sbroenne'],
-						env: apiKey ? { 'HEYGEN_API_KEY': apiKey } : {},
-						version: '0.1.0'
-					}
+					'HeyGen MCP Server',
+					'uvx',
+					['heygen-mcp-sbroenne'],
+					apiKey ? { 'HEYGEN_API_KEY': apiKey } : {},
+					'0.1.0'
 				);
-				
+
 				servers.push(serverDef);
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : String(error);
@@ -51,10 +41,10 @@ export function activate(context: vscode.ExtensionContext) {
 				);
 				console.error('HeyGen MCP: Failed to create server definition', error);
 			}
-			
+
 			return servers;
 		},
-		
+
 		resolveMcpServerDefinition: async (
 			server: vscode.McpServerDefinition,
 			_token: vscode.CancellationToken
@@ -63,7 +53,7 @@ export function activate(context: vscode.ExtensionContext) {
 			if (server.label === 'HeyGen MCP Server') {
 				const config = vscode.workspace.getConfiguration('heygen-mcp');
 				let apiKey = config.get<string>('apiKey');
-				
+
 				if (!apiKey) {
 					const promptResult = await vscode.window.showInputBox({
 						title: 'HeyGen API Key Required',
@@ -77,22 +67,22 @@ export function activate(context: vscode.ExtensionContext) {
 							return null;
 						}
 					});
-					
+
 					if (promptResult) {
 						apiKey = promptResult;
-						
+
 						// Save to user settings (global) so it works across all workspaces
 						await config.update(
 							'apiKey',
 							apiKey,
 							vscode.ConfigurationTarget.Global
 						);
-						
+
 						// Notify user
 						vscode.window.showInformationMessage(
 							'HeyGen API key configured successfully!'
 						);
-						
+
 						// Trigger re-evaluation so the server gets the new key
 						didChangeEmitter.fire();
 					} else {
@@ -103,43 +93,44 @@ export function activate(context: vscode.ExtensionContext) {
 						return undefined;
 					}
 				}
-				
+
 				// Return an updated server definition with the API key
-				return new vscode.McpStdioServerDefinition({
-					label: 'HeyGen MCP Server',
-					command: 'uvx',
-					args: ['heygen-mcp-sbroenne'],
-					env: { 'HEYGEN_API_KEY': apiKey },
-					version: '0.1.0'
-				});
+				// Constructor: McpStdioServerDefinition(label, command, args?, env?, version?)
+				return new vscode.McpStdioServerDefinition(
+					'HeyGen MCP Server',
+					'uvx',
+					['heygen-mcp-sbroenne'],
+					{ 'HEYGEN_API_KEY': apiKey },
+					'0.1.0'
+				);
 			}
-			
+
 			return server;
 		}
 	};
-	
+
 	// Register the provider
 	const disposable = vscode.lm.registerMcpServerDefinitionProvider(
 		'heygen-mcp.provider',
 		provider
 	);
-	
+
 	context.subscriptions.push(disposable);
-	
+
 	// Register command to open settings
 	const configureCommand = vscode.commands.registerCommand(
 		'heygen-mcp.configure',
 		async () => {
 			const config = vscode.workspace.getConfiguration('heygen-mcp');
 			const apiKey = config.get<string>('apiKey');
-			
+
 			if (apiKey) {
 				const update = await vscode.window.showInformationMessage(
 					'HeyGen API key is already configured. Update it?',
 					'Update',
 					'Cancel'
 				);
-				
+
 				if (update === 'Update') {
 					const newKey = await vscode.window.showInputBox({
 						title: 'Update HeyGen API Key',
@@ -153,7 +144,7 @@ export function activate(context: vscode.ExtensionContext) {
 							return null;
 						}
 					});
-					
+
 					if (newKey !== undefined && newKey !== '') {
 						await config.update(
 							'apiKey',
@@ -177,7 +168,7 @@ export function activate(context: vscode.ExtensionContext) {
 						return null;
 					}
 				});
-				
+
 				if (apiKey) {
 					await config.update(
 						'apiKey',
@@ -192,9 +183,9 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		}
 	);
-	
+
 	context.subscriptions.push(configureCommand);
-	
+
 	// Register help command
 	const helpCommand = vscode.commands.registerCommand(
 		'heygen-mcp.help',
@@ -220,9 +211,9 @@ export function activate(context: vscode.ExtensionContext) {
 			});
 		}
 	);
-	
+
 	context.subscriptions.push(helpCommand);
-	
+
 	// Log activation
 	console.log('HeyGen MCP VS Code extension activated');
 }
