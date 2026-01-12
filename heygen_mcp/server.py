@@ -52,8 +52,46 @@ logger = logging.getLogger("heygen_mcp")
 # Load environment variables
 load_dotenv()
 
-# Create MCP server instance
-mcp = FastMCP("HeyGen MCP")
+# Create MCP server instance with instructions for LLMs
+# fmt: off
+# ruff: noqa: E501
+MCP_INSTRUCTIONS = """
+# HeyGen MCP Server - AI Video Generation
+
+This server enables AI-powered video generation using HeyGen's platform.
+
+## WORKFLOW: Creating a Video
+
+1. **Get Available Resources First**:
+   - Use `avatars(action='list')` to see available avatars
+   - Use `voices(action='list')` to see available voices
+   - Use `user(action='credits')` to check remaining credits
+
+2. **Generate Video** (choose one approach):
+   - **From scratch**: Use `videos(action='generate')` with avatar_id, voice_id, and input_text
+   - **From template**: Use `templates(action='list')`, then `templates(action='get')` to see variables, then `templates(action='generate')`
+   - **From photo (Avatar IV)**: Upload photo with `assets(action='upload')`, then use `videos(action='generate_iv')`
+
+3. **Check Status**: Use `videos(action='status')` - videos take minutes to hours to process
+
+## KEY CONCEPTS
+
+- **Avatar**: The AI person who appears in the video
+- **Voice**: The voice that speaks the script (can be different from avatar)
+- **Template**: Pre-made video layouts with customizable variables (text, images, avatars)
+- **Asset**: Uploaded media files (images, videos, audio) used in videos
+- **Avatar IV**: Create videos from any photo with AI-generated motion
+
+## TIPS
+
+- Always check credits before generating videos
+- Template-based videos are often easier than building from scratch
+- Video generation is async - always poll status until complete
+- Use test=True for template videos to preview without using credits
+"""
+# fmt: on
+
+mcp = FastMCP("HeyGen MCP", instructions=MCP_INSTRUCTIONS)
 _api_client: HeyGenApiClient | None = None
 
 
@@ -94,9 +132,11 @@ async def reset_api_client() -> None:
 @mcp.tool(
     name="user",
     description=(
-        "Manage HeyGen user account. Actions: "
-        "'info' - get user profile information; "
-        "'credits' - get remaining credits/quota."
+        "Manage HeyGen user account. "
+        "RECOMMENDED: Call 'credits' before generating videos to check quota. "
+        "Actions: "
+        "'info' - get user profile (username, email, plan); "
+        "'credits' - get remaining credits (IMPORTANT: check before video generation)."
     ),
 )
 async def user(
@@ -127,8 +167,10 @@ async def user(
 @mcp.tool(
     name="voices",
     description=(
-        "Manage HeyGen voices. Actions: "
-        "'list' - get available voices (max 100, private voices first)."
+        "Get available voices for video generation. "
+        "REQUIRED: You need a voice_id to generate any video. "
+        "Actions: 'list' - returns voices with id, name, language, gender. "
+        "TIP: Match voice language to your script language."
     ),
 )
 async def voices(
@@ -155,11 +197,14 @@ async def voices(
 @mcp.tool(
     name="avatars",
     description=(
-        "Manage HeyGen avatars and avatar groups. Actions: "
-        "'list' - get all avatars and talking photos; "
+        "Get available avatars (AI personas) for video generation. "
+        "REQUIRED: You need an avatar_id to generate videos. "
+        "Actions: "
+        "'list' - get all avatars with id, name, gender (START HERE); "
         "'get' - get details for a specific avatar (requires avatar_id); "
-        "'list_groups' - get avatar groups (set include_public=true for public); "
-        "'list_in_group' - get avatars in a specific group (requires group_id)."
+        "'list_groups' - get avatar groups (include_public=true for public); "
+        "'list_in_group' - get avatars in a group (requires group_id). "
+        "TIP: Use 'list' first, then 'get' for details on a chosen avatar."
     ),
 )
 async def avatars(
@@ -212,18 +257,17 @@ async def avatars(
 @mcp.tool(
     name="videos",
     description=(
-        "Manage HeyGen video generation. Actions: "
-        "'list' - get all videos in your account (optional token for pagination); "
-        "'generate' - create a new avatar video (requires avatar_id, input_text, "
-        "voice_id; optional title, background_type, background_value, "
-        "background_image_asset_id, background_video_asset_id, background_play_style); "
-        "'generate_iv' - create Avatar IV video from photo with AI motion "
-        "(requires image_key, script, voice_id, video_title; optional audio_url, "
-        "audio_asset_id, custom_motion_prompt, enhance_custom_motion_prompt); "
-        "'status' - check video status (requires video_id). "
-        "Note: Video processing may take minutes to hours. "
-        "Background types: 'color' (solid), 'image', 'video'. "
-        "Video play styles: 'fit_to_scene', 'freeze', 'loop', 'full_video'."
+        "Generate AI avatar videos and check their status. "
+        "WORKFLOW: 1) Get avatar_id, 2) Get voice_id, 3) Call 'generate', "
+        "4) Poll 'status' until complete. "
+        "Actions: "
+        "'list' - get all videos (with status and video_url if complete); "
+        "'generate' - create video (REQUIRED: avatar_id, input_text, voice_id; "
+        "OPTIONAL: title, background_type, background_value); "
+        "'generate_iv' - create video from photo with AI motion "
+        "(REQUIRED: image_key, script, voice_id, video_title); "
+        "'status' - check if ready (REQUIRED: video_id). "
+        "NOTE: Videos take 1-10+ min. Poll status until completed."
     ),
 )
 async def videos(
@@ -395,11 +439,16 @@ async def videos(
 @mcp.tool(
     name="templates",
     description=(
-        "Manage HeyGen video templates. Actions: "
-        "'list' - get all templates in your account; "
-        "'get' - get template details including variables (requires template_id); "
-        "'generate' - create video from template (requires template_id; optional "
-        "variables dict, title, test mode, caption)."
+        "Use pre-made video templates for easier video creation. "
+        "EASIER THAN 'videos': Templates have pre-configured layouts. "
+        "WORKFLOW: 1) 'list' templates, 2) 'get' to see variables, "
+        "3) 'generate' with variables, 4) Check status. "
+        "Actions: "
+        "'list' - get all templates with id and name; "
+        "'get' - get template variables (REQUIRED: template_id); "
+        "'generate' - create video (REQUIRED: template_id; "
+        "OPTIONAL: variables dict, title, test=True, caption=True). "
+        "TIP: Use test=True to preview without using credits."
     ),
 )
 async def templates(
@@ -456,10 +505,13 @@ async def templates(
 @mcp.tool(
     name="assets",
     description=(
-        "Manage HeyGen media assets. Actions: "
-        "'list' - get all assets (images, videos, audios); "
-        "'upload' - upload a media file (requires file_path), returns asset_id; "
-        "'delete' - remove an asset (requires asset_id)."
+        "Upload and manage media files (images, videos, audio). "
+        "USE CASES: backgrounds, Avatar IV photos, custom audio. "
+        "Actions: "
+        "'list' - get all assets with id, name, type, and url; "
+        "'upload' - upload file (REQUIRED: file_path; returns asset_id); "
+        "'delete' - remove asset (REQUIRED: asset_id). "
+        "NOTE: For Avatar IV, upload photo first - asset_id is the image_key."
     ),
 )
 async def assets(
@@ -508,12 +560,14 @@ async def assets(
 @mcp.tool(
     name="folders",
     description=(
-        "Manage HeyGen folders for organizing videos and assets. Actions: "
-        "'list' - get all folders in your account; "
-        "'create' - create a new folder (requires name); "
-        "'rename' - rename an existing folder (requires folder_id and name); "
-        "'trash' - move a folder to trash (requires folder_id); "
-        "'restore' - restore a folder from trash (requires folder_id)."
+        "Organize videos and assets into folders. "
+        "OPTIONAL: Use folders to keep your HeyGen workspace organized. "
+        "Actions: "
+        "'list' - get all folders with id and name; "
+        "'create' - create a new folder (REQUIRED: name); "
+        "'rename' - rename a folder (REQUIRED: folder_id, name); "
+        "'trash' - move folder to trash (REQUIRED: folder_id); "
+        "'restore' - recover folder from trash (REQUIRED: folder_id)."
     ),
 )
 async def folders(
