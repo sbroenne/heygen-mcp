@@ -76,10 +76,8 @@ For the VS Code extension, download the `.vsix` file and install via:
 The easiest way to use HeyGen MCP with VS Code is through the community VS Code extension:
 
 1. **Install the extension**:
-   - Open VS Code
-   - Go to Extensions (Ctrl+Shift+X)
-   - Search for "HeyGen MCP sbroenne" (to find the community fork)
-   - Click Install
+   - [Install from VS Code Marketplace →](https://marketplace.visualstudio.com/items?itemName=sbroenne.heygen-mcp)
+   - Or search for "sbroenne.heygen-mcp" in VS Code Extensions (Ctrl+Shift+X)
 
 2. **Configure your API key**:
    - Use Command Palette (Ctrl+Shift+P)
