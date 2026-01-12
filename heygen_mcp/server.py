@@ -222,8 +222,8 @@ async def avatars(
         "audio_asset_id, custom_motion_prompt, enhance_custom_motion_prompt); "
         "'status' - check video status (requires video_id). "
         "Note: Video processing may take minutes to hours. "
-        "Background types: 'color' (solid color), 'image' (static image), 'video' (video layer). "
-        "Play styles for video backgrounds: 'fit_to_scene', 'freeze', 'loop', 'full_video'."
+        "Background types: 'color' (solid), 'image', 'video'. "
+        "Video play styles: 'fit_to_scene', 'freeze', 'loop', 'full_video'."
     ),
 )
 async def videos(
@@ -249,7 +249,12 @@ async def videos(
     audio_asset_id: str | None = None,
     custom_motion_prompt: str | None = None,
     enhance_custom_motion_prompt: bool | None = None,
-) -> MCPVideoListResponse | MCPVideoGenerateResponse | MCPVideoStatusResponse | MCPAvatarIVVideoResponse:
+) -> (
+    MCPVideoListResponse
+    | MCPVideoGenerateResponse
+    | MCPVideoStatusResponse
+    | MCPAvatarIVVideoResponse
+):
     """Manage video generation and status."""
     logger.info(f"videos action={action} video_id={video_id} avatar_id={avatar_id}")
     try:
@@ -278,28 +283,45 @@ async def videos(
                 if background_type == "color":
                     if not background_value:
                         return MCPVideoGenerateResponse(
-                            error="background_value (hex color) is required for background_type='color'"
+                            error="background_value required for color background"
                         )
-                    background = Background(type="color", value=background_value)
+                    background = Background(
+                        type="color",
+                        value=background_value,
+                        url=None,
+                        image_asset_id=None,
+                        video_asset_id=None,
+                        play_style=None,
+                    )
                 elif background_type == "image":
                     if not background_image_asset_id:
                         return MCPVideoGenerateResponse(
-                            error="background_image_asset_id is required for background_type='image'"
+                            error="background_image_asset_id required for image"
                         )
-                    background = Background(type="image", image_asset_id=background_image_asset_id)
+                    background = Background(
+                        type="image",
+                        value=None,
+                        url=None,
+                        image_asset_id=background_image_asset_id,
+                        video_asset_id=None,
+                        play_style=None,
+                    )
                 elif background_type == "video":
                     if not background_video_asset_id:
                         return MCPVideoGenerateResponse(
-                            error="background_video_asset_id is required for background_type='video'"
+                            error="background_video_asset_id required for video"
                         )
                     background = Background(
                         type="video",
+                        value=None,
+                        url=None,
+                        image_asset_id=None,
                         video_asset_id=background_video_asset_id,
-                        play_style=background_play_style or "fit_to_scene"
+                        play_style=background_play_style or "fit_to_scene",
                     )
                 else:
                     return MCPVideoGenerateResponse(
-                        error=f"Invalid background_type: {background_type}. Must be 'color', 'image', or 'video'"
+                        error=f"Invalid background_type: {background_type}"
                     )
 
             request = VideoGenerateRequest(
