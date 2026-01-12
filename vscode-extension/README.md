@@ -18,7 +18,7 @@ HeyGen MCP Server for VS Code, enabling AI assistants like GitHub Copilot to gen
 
 1. Open VS Code
 2. Go to Extensions (Ctrl+Shift+X / Cmd+Shift+X)
-3. Search for "HeyGen MCP"
+3. Search for "HeyGen MCP sbroenne" (community fork)
 4. Click Install
 
 ### Manual Installation

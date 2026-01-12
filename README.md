@@ -71,12 +71,12 @@ For other installation methods, see the [uv documentation](https://github.com/as
 
 ### VS Code Extension (Recommended)
 
-The easiest way to use HeyGen MCP with VS Code is through the official VS Code extension:
+The easiest way to use HeyGen MCP with VS Code is through the community VS Code extension:
 
 1. **Install the extension**:
    - Open VS Code
    - Go to Extensions (Ctrl+Shift+X)
-   - Search for "HeyGen MCP"
+   - Search for "HeyGen MCP sbroenne" (to find the community fork)
    - Click Install
 
 2. **Configure your API key**:
