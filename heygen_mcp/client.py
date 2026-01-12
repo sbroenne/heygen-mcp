@@ -736,36 +736,40 @@ class HeyGenApiClient:
             MCPAssetUploadResponse with asset_id and url.
         """
         import mimetypes
-        import os
 
         upload_url = "https://upload.heygen.com/v1/asset"
 
         try:
-            # Determine MIME type
+            # Determine MIME type - API only accepts specific types
             mime_type, _ = mimetypes.guess_type(file_path)
-            if mime_type is None:
-                mime_type = "application/octet-stream"
+            allowed_types = {
+                "image/png",
+                "image/jpeg",
+                "video/mp4",
+                "video/webm",
+                "audio/mpeg",
+            }
+            if mime_type not in allowed_types:
+                return MCPAssetUploadResponse(
+                    error=f"Unsupported file type: {mime_type}. "
+                    f"Allowed types: {', '.join(sorted(allowed_types))}"
+                )
 
-            file_name = os.path.basename(file_path)
-
-            # Read the file
+            # Read the file as raw binary
             with open(file_path, "rb") as f:
                 file_content = f.read()
 
-            # Prepare multipart form data
-            files = {
-                "file": (file_name, file_content, mime_type),
-            }
-
+            # API expects raw binary data with Content-Type header
             headers = {
                 "X-Api-Key": self.api_key,
                 "User-Agent": self._user_agent,
+                "Content-Type": mime_type,
             }
 
             response = await self._client.post(
                 upload_url,
                 headers=headers,
-                files=files,
+                content=file_content,
             )
 
             if response.status_code in RETRYABLE_STATUS_CODES:
@@ -784,7 +788,7 @@ class HeyGenApiClient:
 
             if parsed.data:
                 return MCPAssetUploadResponse(
-                    asset_id=parsed.data.asset_id,
+                    asset_id=parsed.data.id,
                     url=parsed.data.url,
                 )
 

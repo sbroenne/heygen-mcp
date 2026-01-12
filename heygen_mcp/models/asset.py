@@ -30,7 +30,7 @@ class AssetUploadData(BaseModel):
 
     model_config = {"extra": "ignore"}
 
-    asset_id: Optional[str] = Field(None, description="ID of the uploaded asset")
+    id: Optional[str] = Field(None, description="ID of the uploaded asset")
     url: Optional[str] = Field(None, description="URL to access the uploaded asset")
 
 
