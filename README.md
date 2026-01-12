@@ -40,7 +40,6 @@ The extension handles server registration and API key configuration automaticall
 
 - Python 3.10 or higher
 - A Heygen API key (get one from [Heygen](https://www.heygen.com/)). Includes 10 Free Credits per Month
-- [uv](https://docs.astral.sh/uv/) package manager (recommended) - see [installation guide](https://docs.astral.sh/uv/getting-started/installation/)
 
 ### Install from PyPI
 
