@@ -45,6 +45,27 @@ For other installation methods, see the [uv documentation](https://github.com/as
 
 ## Usage
 
+### VS Code Extension (Recommended)
+
+The easiest way to use HeyGen MCP with VS Code is through the official VS Code extension:
+
+1. **Install the extension**:
+   - Open VS Code
+   - Go to Extensions (Ctrl+Shift+X)
+   - Search for "HeyGen MCP"
+   - Click Install
+
+2. **Configure your API key**:
+   - Use Command Palette (Ctrl+Shift+P)
+   - Search for "HeyGen: Configure API Key"
+   - Enter your API key
+
+3. **Start using it**:
+   - The HeyGen MCP server will automatically be available to your AI assistant
+   - Ask your AI assistant to generate videos, manage templates, etc.
+
+See [vscode-extension/README.md](vscode-extension/README.md) for more details.
+
 ### Quickstart with Claude Desktop
 
 1. Get your API key from [HeyGen](https://www.heygen.com/).
@@ -75,7 +96,7 @@ For other installation methods, see the [uv documentation](https://github.com/as
 
 If you're using Windows, you'll need to enable "Developer Mode" in Claude Desktop to use the MCP server. Click "Help" in the hamburger menu at the top left and select "Enable Developer Mode".
 
-### Using with VS Code
+### Using with VS Code (Manual Configuration)
 
 Add the following to your VS Code settings (`.vscode/mcp.json`):
 
@@ -145,7 +166,7 @@ For VS Code, use `servers` instead of `mcpServers`.
 
 ### Available MCP Tools
 
-The server provides 7 resource-based tools, each with multiple actions:
+The server provides 6 resource-based tools, each with multiple actions:
 
 #### `user` - User Account Management
 
@@ -173,24 +194,18 @@ The server provides 7 resource-based tools, each with multiple actions:
 
 | Action | Parameters | Description |
 |--------|------------|-------------|
-| `generate` | `avatar_id`, `input_text`, `voice_id`, `title` (optional) | Create a new avatar video |
-| `generate_iv` | `image_key`, `script`, `voice_id`, `video_title`, `audio_url` (opt), `audio_asset_id` (opt), `custom_motion_prompt` (opt), `enhance_custom_motion_prompt` (opt) | Create Avatar IV video from photo with AI motion |
+| `generate` | `avatar_id`, `input_text`, `voice_id`, `title` (optional), `background_type`, `background_value`, `background_image_asset_id`, `background_video_asset_id`, `background_play_style` (optional) | Create a new avatar video with optional background (color/image/video) |
 | `status` | `video_id` | Check video processing status |
 
-**Avatar IV Videos**: Use `generate_iv` to create photorealistic avatar videos from a single photo. First upload a photo using `assets(action="upload")` to get an `image_key`, then generate the video with AI-powered motion and expressions.
+**✨ New: Video Background Support** - Generate videos with color, image, or video backgrounds. Perfect for tutorial videos with screen recordings! See [Video Backgrounds Guide](docs/VIDEO_BACKGROUNDS.md) for details.
 
-#### `templates` - Template Management (V3 API)
+#### `templates` - Template Management
 
 | Action | Parameters | Description |
 |--------|------------|-------------|
 | `list` | - | Get all templates in your account |
-| `get` | `template_id` | Get template details including **dynamic/custom variables** and scenes |
+| `get` | `template_id` | Get template details including variables |
 | `generate` | `template_id`, `variables` (optional), `title`, `test`, `caption` | Create video from template |
-
-The `get` action uses the V3 template API which returns detailed variable information for each scene, including:
-- **Text variables**: Customizable text content with content property
-- **Avatar variables**: Avatar selection with avatar_id, voice_id, and script
-- **Image/Video/Audio variables**: Media replacement with url, asset_id, and fit properties
 
 #### `assets` - Asset Management
 
@@ -199,18 +214,6 @@ The `get` action uses the V3 template API which returns detailed variable inform
 | `list` | - | Get all assets (images, videos, audios) |
 | `upload` | `file_path` | Upload a media file, returns asset_id |
 | `delete` | `asset_id` | Remove an asset |
-
-#### `folders` - Folder Management
-
-| Action | Parameters | Description |
-|--------|------------|-------------|
-| `list` | - | Get all folders in your account |
-| `create` | `name`, `parent_id` (optional), `project_type` (optional) | Create a new folder |
-| `rename` | `folder_id`, `name` | Rename an existing folder |
-| `trash` | `folder_id` | Move a folder to trash |
-| `restore` | `folder_id` | Restore a folder from trash |
-
-**Project types for folders:** `avatar_video`, `personalized_video`, `template`, `talking_photo`, `photo_avatar`
 
 **Example Usage:**
 
@@ -226,39 +229,6 @@ avatars(action="get", avatar_id="avatar_123")
 
 # Generate a video
 videos(action="generate", avatar_id="...", input_text="Hello!", voice_id="...")
-
-# Upload a photo and generate Avatar IV video
-assets(action="upload", file_path="/path/to/photo.jpg")  # Returns image_key
-videos(
-    action="generate_iv",
-    image_key="...",  # From upload
-    video_title="My Avatar IV Video",
-    script="Hello, this is my AI avatar speaking!",
-    voice_id="...",
-    custom_motion_prompt="Speak confidently with natural gestures"
-)
-
-# List folders
-folders(action="list")
-
-# Create a folder for templates
-folders(action="create", name="My Templates", project_type="template")
-
-# Get template details with V3 API (includes variables per scene)
-templates(action="get", template_id="template_123")
-
-# Generate video from template with variable replacements
-templates(
-    action="generate",
-    template_id="template_123",
-    variables={
-        "first_name": {
-            "name": "first_name",
-            "type": "text",
-            "properties": {"content": "John"}
-        }
-    }
-)
 ```
 
 ## Development
@@ -317,8 +287,7 @@ uv run pytest tests/ -v -k "not video_generation"
 ## Roadmap
 
 - [x] Tests (integration tests + MCP server smoke tests)
-- [x] Template API Support (V3 with dynamic/custom variables)
-- [x] Folder Management API Support
+- [x] Template API Support
 - [x] CI/CD (GitHub Actions + PyPI release)
 - [ ] Photo Avatar APIs Support
 - [ ] SSE And Remote MCP Server with OAuth Flow

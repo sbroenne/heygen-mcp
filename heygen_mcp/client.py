@@ -47,6 +47,7 @@ from .models import (
     MCPTemplateVideoGenerateResponse,
     MCPUserInfoResponse,
     MCPVideoGenerateResponse,
+    MCPVideoListResponse,
     MCPVideoStatusResponse,
     MCPVoicesResponse,
     RemainingQuotaResponse,
@@ -56,6 +57,7 @@ from .models import (
     UserInfoResponse,
     VideoGenerateRequest,
     VideoGenerateResponse,
+    VideoListResponse,
     VideoStatusResponse,
     VoicesResponse,
 )
@@ -487,7 +489,7 @@ class HeyGenApiClient:
             return await self._make_request(
                 "video/generate",
                 method="POST",
-                data=video_request.model_dump(),
+                data=video_request.model_dump(exclude_none=True),
             )
 
         return await self._handle_api_request(
@@ -546,6 +548,38 @@ class HeyGenApiClient:
             )
         except Exception as e:
             return MCPVideoStatusResponse(error=f"An unexpected error occurred: {e}")
+
+    async def list_videos(self, token: Optional[str] = None) -> MCPVideoListResponse:
+        """List all videos in the HeyGen account.
+
+        Args:
+            token: Optional pagination token for fetching next page of results.
+
+        Returns:
+            MCPVideoListResponse with list of videos.
+        """
+
+        async def api_call():
+            endpoint = "../v1/video.list"
+            if token:
+                endpoint = f"{endpoint}?token={token}"
+            return await self._make_request(endpoint)
+
+        def transform_data(data, mcp_class):
+            videos = data.videos if data.videos else []
+            return mcp_class(
+                videos=videos,
+                total=len(videos),
+                token=data.token,
+            )
+
+        return await self._handle_api_request(
+            api_call=api_call,
+            response_model_class=VideoListResponse,
+            mcp_response_class=MCPVideoListResponse,
+            error_msg="Failed to list videos.",
+            transform_func=transform_data,
+        )
 
     async def generate_avatar_iv_video(
         self, request: AvatarIVVideoRequest

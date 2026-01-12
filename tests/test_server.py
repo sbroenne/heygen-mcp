@@ -138,6 +138,19 @@ class TestVideosTool:
     """Smoke tests for the videos resource tool."""
 
     @pytest.mark.asyncio
+    async def test_videos_list_action(self):
+        """Test videos(action='list') returns video list."""
+        result = await videos(action="list")
+
+        assert result.error is None, f"Tool returned error: {result.error}"
+        assert result.videos is not None
+        assert result.total is not None
+        assert result.total >= 0
+        print(f"\n  Found {result.total} videos")
+        if result.videos:
+            print(f"  First video: {result.videos[0].video_id} ({result.videos[0].status})")
+
+    @pytest.mark.asyncio
     async def test_videos_status_action(self):
         """Test videos(action='status') with invalid ID."""
         result = await videos(action="status", video_id="invalid-video-id")

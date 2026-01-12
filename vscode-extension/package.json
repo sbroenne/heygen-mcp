@@ -1,0 +1,86 @@
+{
+  "name": "heygen-mcp",
+  "displayName": "HeyGen MCP Server",
+  "description": "Generate AI videos and manage templates, assets, and avatars",
+  "version": "0.1.0",
+  "publisher": "heygen",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.106.0"
+  },
+  "categories": [
+    "AI",
+    "Other"
+  ],
+  "keywords": [
+    "heygen",
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "video",
+    "avatar"
+  ],
+  "homepage": "https://github.com/sbroenne/heygen-mcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sbroenne/heygen-mcp.git"
+  },
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "heygen-mcp.configure",
+        "title": "HeyGen: Configure API Key"
+      },
+      {
+        "command": "heygen-mcp.help",
+        "title": "HeyGen: Help"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "HeyGen MCP",
+      "properties": {
+        "heygen-mcp.apiKey": {
+          "type": "string",
+          "description": "HeyGen API key for authentication",
+          "scope": "application"
+        },
+        "heygen-mcp.autoStartServer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically start the HeyGen MCP server when VS Code starts"
+        }
+      }
+    },
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "heygen-mcp.provider",
+        "label": "HeyGen MCP Server"
+      }
+    ]
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "scripts": {
+    "vscode:prepublish": "npm run esbuild-base -- --minify",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --target=node16",
+    "esbuild": "npm run esbuild-base -- --sourcemap",
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "npx vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.26",
+    "@types/vscode": "^1.106.1",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "esbuild": "^0.27.1",
+    "eslint": "^8.57.1",
+    "typescript": "^5.9.3"
+  }
+}
