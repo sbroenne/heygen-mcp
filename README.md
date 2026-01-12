@@ -1,14 +1,38 @@
-# Heygen MCP Server
+# HeyGen MCP Server
 
-![Heygen Logo](heygen_logo.png)
+[![VS Code Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/heygen.heygen-mcp?label=VS%20Code%20Installs)](https://marketplace.visualstudio.com/items?itemName=heygen.heygen-mcp)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/heygen-mcp-sbroenne?label=PyPI%20Downloads)](https://pypi.org/project/heygen-mcp-sbroenne/)
+[![GitHub Downloads](https://img.shields.io/github/downloads/sbroenne/heygen-mcp/total?label=GitHub%20Downloads)](https://github.com/sbroenne/heygen-mcp/releases)
+
+[![CI](https://github.com/sbroenne/heygen-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/sbroenne/heygen-mcp/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/sbroenne/heygen-mcp)](https://github.com/sbroenne/heygen-mcp/releases/latest)
+[![PyPI Version](https://img.shields.io/pypi/v/heygen-mcp-sbroenne)](https://pypi.org/project/heygen-mcp-sbroenne/)
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.10--3.13-blue.svg)](https://www.python.org/downloads/)
+[![Built with Copilot](https://img.shields.io/badge/Built%20with-GitHub%20Copilot-0366d6.svg)](https://copilot.github.com/)
+
+![HeyGen Logo](heygen_logo.png)
 
 > ⚠️ **Disclaimer**: This is a community fork of the original HeyGen MCP server, which appears to be abandoned. This is **not** an official HeyGen repository. Use at your own discretion.
 
-The HeyGen MCP server enables any MCP Client like Claude Desktop or Agents to use the [HeyGen API](https://docs.heygen.com/) to generate avatars and videos.
+**Generate AI Videos with Natural Language** - A Model Context Protocol (MCP) server for HeyGen API integration with AI assistants.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+The HeyGen MCP server enables AI assistants (GitHub Copilot, Claude, ChatGPT) to generate AI avatar videos, manage templates, and work with assets through natural language commands.
 
-Note: This project is in early development. While we welcome community feedback and contributions, please be aware that official support is limited.
+## 🚀 Quick Start (1 Minute)
+
+**Requirements:** Python 3.10+ | HeyGen API Key ([get one here](https://app.heygen.com/settings?nav=API) - 10 free credits/month)
+
+### ⭐ Recommended: VS Code Extension (One-Click Setup)
+
+**Fastest way to get started - everything configured automatically:**
+
+**[Install from VS Code Marketplace →](https://marketplace.visualstudio.com/items?itemName=heygen.heygen-mcp)**
+
+The extension handles server registration and API key configuration automatically!
+
+---
 
 ## Installation
 
