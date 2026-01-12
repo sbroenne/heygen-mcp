@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LLM Tests Configuration",
+  "description": "Configuration for HeyGen MCP LLM tests using agent-benchmark",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference"
+    },
+    "agentBenchmarkPath": {
+      "type": ["string", "null"],
+      "description": "Path to agent-benchmark executable or source directory. If null, looks in system PATH."
+    },
+    "agentBenchmarkMode": {
+      "type": "string",
+      "enum": ["executable", "go-run"],
+      "default": "executable",
+      "description": "How to run agent-benchmark: 'executable' uses compiled binary, 'go-run' uses 'go run .' from source"
+    },
+    "serverCommand": {
+      "type": ["string", "null"],
+      "description": "Command to start the HeyGen MCP server. If null, uses 'uv run python -m heygen_mcp.server'"
+    },
+    "verbose": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable verbose output by default"
+    }
+  },
+  "additionalProperties": false
+}

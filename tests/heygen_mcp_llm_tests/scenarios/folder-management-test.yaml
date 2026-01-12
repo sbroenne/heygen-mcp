@@ -1,0 +1,61 @@
+# Folder Management Test
+# Tests the 'folders' MCP tool - CRUD operations
+# MUTATING TEST: Creates, renames, and trashes folders in your account
+
+criteria:
+  success_rate: 1
+
+providers:
+  - name: azure-openai-gpt41
+    type: AZURE
+    auth_type: entra_id
+    model: gpt-4.1
+    baseUrl: "{{AZURE_OPENAI_ENDPOINT}}"
+    version: 2025-01-01-preview
+
+servers:
+  - name: heygen-mcp
+    type: stdio
+    command: "{{SERVER_COMMAND}}"
+    server_delay: 10s
+    env:
+      HEYGEN_API_KEY: "{{HEYGEN_API_KEY}}"
+
+agents:
+  - name: gpt41-agent
+    servers:
+      - name: heygen-mcp
+    provider: azure-openai-gpt41
+
+settings:
+  verbose: true
+  max_iterations: 20
+
+sessions:
+  - name: "Folder Operations"
+    tests:
+      - name: "List folders"
+        prompt: |
+          List all folders in my HeyGen account.
+          Report how many folders exist.
+        assertions:
+          - type: no_hallucinated_tools
+          - type: tool_called
+            tool: folders
+          - type: output_regex
+            pattern: "(?i)(folder|\\d+|found|none)"
+
+      - name: "Create and manage folder"
+        prompt: |
+          Perform the following folder operations:
+          1. Create a new folder named "LLM Test Folder {{randomValue type='UUID'}}"
+          2. List all folders to confirm it was created
+          3. Rename the folder to "Renamed Test Folder"
+          4. Move the folder to trash to clean up
+          5. Report that all operations completed successfully
+        assertions:
+          - type: no_hallucinated_tools
+          - type: tool_called
+            tool: folders
+          - type: output_regex
+            pattern: "(?i)(created|renamed|trash|complet|success)"

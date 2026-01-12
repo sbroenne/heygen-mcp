@@ -1,0 +1,5 @@
+# Local configuration (personal settings)
+llm_tests_config.local.json
+
+# Test results (generated reports)
+test_results/

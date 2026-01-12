@@ -1,0 +1,7 @@
+{
+  "$schema": "./llm_tests_config.schema.json",
+  "agentBenchmarkPath": null,
+  "agentBenchmarkMode": "executable",
+  "serverCommand": null,
+  "verbose": false
+}
