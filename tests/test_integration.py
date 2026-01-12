@@ -527,6 +527,7 @@ class TestAssetUploadDelete:
             f.write(png_data)
             temp_path = f.name
 
+        asset_id = None
         try:
             upload_result = await api_client.upload_asset(file_path=temp_path)
 
@@ -541,9 +542,18 @@ class TestAssetUploadDelete:
             assert isinstance(delete_result, MCPAssetDeleteResponse)
             assert delete_result.error is None, f"Delete error: {delete_result.error}"
             print(f"  Deleted asset: {asset_id}")
+            asset_id = None  # Mark as cleaned up
 
         finally:
+            # Clean up local temp file
             os.unlink(temp_path)
+            # Clean up HeyGen asset if upload succeeded but test failed before delete
+            if asset_id is not None:
+                try:
+                    await api_client.delete_asset(asset_id=asset_id)
+                    print(f"  Cleanup: deleted orphaned asset {asset_id}")
+                except Exception as e:
+                    print(f"  Cleanup warning: could not delete asset {asset_id}: {e}")
 
 
 class TestAvatarIVVideo:
