@@ -171,9 +171,9 @@ def run_scenario(
         print(f"Available scenarios: {', '.join(list_scenarios())}")
         return False
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Running scenario: {scenario_file.name}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     # Get agent-benchmark command
     ab_command, ab_cwd = find_agent_benchmark(config)
