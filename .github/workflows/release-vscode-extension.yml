@@ -1,0 +1,177 @@
+name: Release VS Code Extension
+
+# This workflow builds and releases the HeyGen MCP VS Code extension
+# Triggered by pushing tags matching 'vscode-v*'
+
+on:
+  push:
+    tags:
+      - 'vscode-v*'
+
+jobs:
+  release-vscode-extension:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Extract Version from Tag
+      id: get_version
+      run: |
+        TAG_NAME="${{ github.ref_name }}"
+        VERSION="${TAG_NAME#vscode-v}"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Extracted version: $VERSION"
+
+    - name: Update Extension Version
+      run: |
+        VERSION="${{ steps.get_version.outputs.version }}"
+        echo "Updating VS Code extension to version $VERSION"
+
+        cd vscode-extension
+        npm version "$VERSION" --no-git-tag-version
+
+        # Update CHANGELOG.md - replace [Unreleased] with the new version and date
+        DATE=$(date +%Y-%m-%d)
+        if [ -f "CHANGELOG.md" ]; then
+          sed -i "s/## \[Unreleased\]/## [$VERSION] - $DATE/" CHANGELOG.md
+          echo "Updated CHANGELOG.md: [Unreleased] -> [$VERSION] - $DATE"
+        fi
+
+        echo "Updated extension version to $VERSION"
+
+    - name: Install Dependencies
+      run: |
+        cd vscode-extension
+        npm install
+
+    - name: Build and Package Extension
+      run: |
+        cd vscode-extension
+        npm run package
+
+    - name: Prepare VSIX
+      id: prepare_vsix
+      run: |
+        VERSION="${{ steps.get_version.outputs.version }}"
+        cd vscode-extension
+
+        # Find the generated VSIX file
+        VSIX_FILE=$(ls -1 *.vsix 2>/dev/null | head -n 1)
+        if [ -z "$VSIX_FILE" ]; then
+          echo "No VSIX file found"
+          exit 1
+        fi
+
+        TARGET_NAME="heygen-mcp-$VERSION.vsix"
+        if [ "$VSIX_FILE" != "$TARGET_NAME" ]; then
+          mv "$VSIX_FILE" "$TARGET_NAME"
+          echo "Renamed $VSIX_FILE to $TARGET_NAME"
+        fi
+
+        echo "Created $TARGET_NAME"
+        ls -la "$TARGET_NAME"
+        echo "vsix_path=vscode-extension/$TARGET_NAME" >> $GITHUB_OUTPUT
+
+    - name: Publish to VS Code Marketplace
+      uses: HaaLeo/publish-vscode-extension@v2
+      with:
+        pat: ${{ secrets.VSCE_TOKEN }}
+        registryUrl: https://marketplace.visualstudio.com
+        extensionFile: ${{ steps.prepare_vsix.outputs.vsix_path }}
+      continue-on-error: true
+      id: publishToMarketplace
+
+    - name: Extract Changelog for Version
+      id: extract_changelog
+      run: |
+        VERSION="${{ steps.get_version.outputs.version }}"
+        CHANGELOG_PATH="vscode-extension/CHANGELOG.md"
+
+        echo "Extracting changelog entries for version $VERSION..."
+
+        if [ -f "$CHANGELOG_PATH" ]; then
+          # Extract content between this version header and the next version header
+          CONTENT=$(sed -n "/^## \[$VERSION\]/,/^## \[/{ /^## \[$VERSION\]/d; /^## \[/d; p; }" "$CHANGELOG_PATH" | head -50)
+          if [ -n "$CONTENT" ]; then
+            echo "Found changelog entry for $VERSION"
+            echo "changelog_content<<EOF" >> $GITHUB_OUTPUT
+            echo "$CONTENT" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "changelog_content=See CHANGELOG.md for details" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "changelog_content=Initial release" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create GitHub Release
+      run: |
+        VERSION="${{ steps.get_version.outputs.version }}"
+        TAG_NAME="${{ github.ref_name }}"
+        VSIX_FILE="${{ steps.prepare_vsix.outputs.vsix_path }}"
+
+        MARKETPLACE_STATUS="Not published"
+        if [ "${{ steps.publishToMarketplace.outcome }}" = "success" ]; then
+          MARKETPLACE_STATUS="Published to VS Code Marketplace"
+        fi
+
+        cat > release_notes.md << 'RELEASE_EOF'
+        ## HeyGen MCP VS Code Extension $TAG_NAME
+
+        ### What's New
+
+        ${{ steps.extract_changelog.outputs.changelog_content }}
+
+        ### AI Video Generation for VS Code
+
+        This extension automatically registers the HeyGen MCP server with VS Code, enabling AI-powered video generation capabilities.
+
+        ### Installation Options
+
+        **Option 1: VS Code Marketplace** - Search for "HeyGen MCP" and click Install
+        **Option 2: Manual VSIX** - Download the .vsix file below and install via VS Code
+
+        ### Publishing Status: $MARKETPLACE_STATUS
+
+        ### Features
+
+        - 🎬 Generate AI videos with custom avatars and voices
+        - 📋 Manage video templates and assets
+        - 🎭 Access HeyGen's avatar library
+        - 🗣️ Use natural and cloned voices
+        - 📁 Organize assets in folders
+
+        ### Requirements
+
+        - VS Code 1.106.0+
+        - Python 3.10+ with uv package manager
+        - HeyGen API key (get one at https://app.heygen.com/settings?nav=API)
+
+        ### Documentation
+
+        - [Quick Start Guide](https://github.com/sbroenne/heygen-mcp/blob/main/vscode-extension/QUICKSTART.md)
+        - [Full Documentation](https://github.com/sbroenne/heygen-mcp/blob/main/vscode-extension/README.md)
+        - [Main Repository](https://github.com/sbroenne/heygen-mcp)
+        RELEASE_EOF
+
+        # Substitute variables in release notes
+        sed -i "s/\$TAG_NAME/$TAG_NAME/g" release_notes.md
+        sed -i "s/\$MARKETPLACE_STATUS/$MARKETPLACE_STATUS/g" release_notes.md
+
+        gh release create "$TAG_NAME" "$VSIX_FILE" \
+          --title "HeyGen MCP VS Code Extension $TAG_NAME" \
+          --notes-file release_notes.md
+
+        echo "Released HeyGen MCP VS Code Extension $VERSION"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
