@@ -148,7 +148,8 @@ class TestVideosTool:
         assert result.total >= 0
         print(f"\n  Found {result.total} videos")
         if result.videos:
-            print(f"  First video: {result.videos[0].video_id} ({result.videos[0].status})")
+            vid = result.videos[0]
+            print(f"  First video: {vid.video_id} ({vid.status})")
 
     @pytest.mark.asyncio
     async def test_videos_status_action(self):

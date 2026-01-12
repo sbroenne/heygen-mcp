@@ -110,9 +110,11 @@ def find_agent_benchmark(config: dict[str, Any]) -> tuple[list[str], str]:
     print("Options:")
     print("  1. Set agentBenchmarkPath in llm_tests_config.local.json")
     print(
-        "  2. Install agent-benchmark: go install github.com/mykhaliev/agent-benchmark@latest"
+        "  2. Install agent-benchmark: "
+        "go install github.com/mykhaliev/agent-benchmark@latest"
     )
-    print("  3. Download from: https://github.com/mykhaliev/agent-benchmark/releases")
+    print("  3. Download from: ")
+    print("     https://github.com/mykhaliev/agent-benchmark/releases")
     sys.exit(1)
 
 
