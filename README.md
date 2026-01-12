@@ -40,32 +40,7 @@ The extension handles server registration and API key configuration automaticall
 
 - Python 3.10 or higher
 - A Heygen API key (get one from [Heygen](https://www.heygen.com/)). Includes 10 Free Credits per Month
-
-### Installing uv
-
-uv is a fast Python package installer and resolver that we recommend for installing this package.
-
-**macOS or Linux:**
-
-```bash
-# Install with the official installer script
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Or via Homebrew (macOS)
-brew install uv
-```
-
-**Windows:**
-
-```powershell
-# Install with the official installer script in PowerShell
-irm https://astral.sh/uv/install.ps1 | iex
-
-# Or via Scoop
-scoop install uv
-```
-
-For other installation methods, see the [uv documentation](https://github.com/astral-sh/uv).
+- [uv](https://docs.astral.sh/uv/) package manager (recommended) - see [installation guide](https://docs.astral.sh/uv/getting-started/installation/)
 
 ### Install from PyPI
 
