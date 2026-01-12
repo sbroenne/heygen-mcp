@@ -1,6 +1,6 @@
 # HeyGen MCP Server
 
-[![VS Code Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/heygen.heygen-mcp?label=VS%20Code%20Installs)](https://marketplace.visualstudio.com/items?itemName=heygen.heygen-mcp)
+[![VS Code Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/sbroenne.heygen-mcp?label=VS%20Code%20Installs)](https://marketplace.visualstudio.com/items?itemName=sbroenne.heygen-mcp)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/heygen-mcp-sbroenne?label=PyPI%20Downloads)](https://pypi.org/project/heygen-mcp-sbroenne/)
 [![GitHub Downloads](https://img.shields.io/github/downloads/sbroenne/heygen-mcp/total?label=GitHub%20Downloads)](https://github.com/sbroenne/heygen-mcp/releases)
 
@@ -28,7 +28,7 @@ The HeyGen MCP server enables AI assistants (GitHub Copilot, Claude, ChatGPT) to
 
 **Fastest way to get started - everything configured automatically:**
 
-**[Install from VS Code Marketplace →](https://marketplace.visualstudio.com/items?itemName=heygen.heygen-mcp)**
+**[Install from VS Code Marketplace →](https://marketplace.visualstudio.com/items?itemName=sbroenne.heygen-mcp)**
 
 The extension handles server registration and API key configuration automatically!
 

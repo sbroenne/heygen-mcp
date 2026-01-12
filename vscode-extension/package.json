@@ -3,7 +3,7 @@
   "displayName": "HeyGen MCP Server",
   "description": "Generate AI videos and manage templates, assets, and avatars",
   "version": "0.1.0",
-  "publisher": "heygen",
+  "publisher": "sbroenne",
   "license": "MIT",
   "engines": {
     "vscode": "^1.106.0"
