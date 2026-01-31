@@ -38,7 +38,7 @@ jobs:
         echo "Updating VS Code extension to version $VERSION"
 
         cd vscode-extension
-        npm version "$VERSION" --no-git-tag-version
+        npm version "$VERSION" --no-git-tag-version --allow-same-version
 
         # Update CHANGELOG.md - replace [Unreleased] with the new version and date
         DATE=$(date +%Y-%m-%d)
