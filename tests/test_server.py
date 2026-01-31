@@ -205,9 +205,7 @@ class TestVideosTool:
     @pytest.mark.asyncio
     async def test_videos_generate_action_missing_voice_text(self):
         """Test videos(action='generate') without input_text in scene returns error."""
-        json_input = (
-            '[{"character": {"avatar_id": "a1"}, ' '"voice": {"voice_id": "v1"}}]'
-        )
+        json_input = '[{"character": {"avatar_id": "a1"}, "voice": {"voice_id": "v1"}}]'
         result = await videos(
             action="generate",
             video_inputs_json=json_input,
@@ -220,7 +218,7 @@ class TestVideosTool:
     async def test_videos_generate_action_missing_voice_id(self):
         """Test videos(action='generate') without voice_id in scene returns error."""
         json_input = (
-            '[{"character": {"avatar_id": "a1"}, ' '"voice": {"input_text": "Hello"}}]'
+            '[{"character": {"avatar_id": "a1"}, "voice": {"input_text": "Hello"}}]'
         )
         result = await videos(
             action="generate",
