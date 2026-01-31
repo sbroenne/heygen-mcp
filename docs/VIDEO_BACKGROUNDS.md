@@ -31,16 +31,26 @@ video_asset_id = result.asset_id
 Then generate an avatar video with the video as background:
 
 ```python
-# Using the videos tool
+import json
+
+# Using the videos tool with video_inputs_json
+scenes = [{
+    "character": {"avatar_id": "Annie_expressive6_public"},
+    "voice": {
+        "voice_id": "6fa2fa767bf148fc939c0bbba7306760",
+        "input_text": "Welcome to this tutorial on Excel pivot tables."
+    },
+    "background": {
+        "type": "video",
+        "video_asset_id": video_asset_id,
+        "play_style": "fit_to_scene"
+    }
+}]
+
 result = await videos(
     action="generate",
-    avatar_id="Annie_expressive6_public",
-    voice_id="6fa2fa767bf148fc939c0bbba7306760",
-    input_text="Welcome to this tutorial on Excel pivot tables.",
-    title="Excel Tutorial 01",
-    background_type="video",
-    background_video_asset_id=video_asset_id,
-    background_play_style="fit_to_scene"
+    video_inputs_json=json.dumps(scenes),
+    title="Excel Tutorial 01"
 )
 video_id = result.video_id
 ```
@@ -67,13 +77,17 @@ Solid color backgrounds using hex color codes.
 
 **Example:**
 ```python
+import json
+
+scenes = [{
+    "character": {"avatar_id": "Annie_expressive6_public"},
+    "voice": {"voice_id": "voice_id", "input_text": "This is on green screen"},
+    "background": {"type": "color", "value": "#008000"}
+}]
+
 await videos(
     action="generate",
-    avatar_id="Annie_expressive6_public",
-    voice_id="voice_id",
-    input_text="This is on green screen",
-    background_type="color",
-    background_value="#008000"  # Green screen
+    video_inputs_json=json.dumps(scenes)
 )
 ```
 
@@ -92,17 +106,21 @@ Static image backgrounds.
 
 **Example:**
 ```python
+import json
+
 # 1. Upload image
 img_result = await assets(action="upload", file_path="company_logo.png")
 
 # 2. Use as background
+scenes = [{
+    "character": {"avatar_id": "professional_avatar"},
+    "voice": {"voice_id": "voice_id", "input_text": "Welcome to our company update"},
+    "background": {"type": "image", "image_asset_id": img_result.asset_id}
+}]
+
 await videos(
     action="generate",
-    avatar_id="professional_avatar",
-    voice_id="voice_id",
-    input_text="Welcome to our company update",
-    background_type="image",
-    background_image_asset_id=img_result.asset_id
+    video_inputs_json=json.dumps(scenes)
 )
 ```
 
@@ -128,19 +146,26 @@ Video backgrounds with playback control.
 
 **Example:**
 ```python
+import json
+
 # 1. Upload video
 vid_result = await assets(action="upload", file_path="screen_recording.mp4")
 
 # 2. Use as background
+scenes = [{
+    "character": {"avatar_id": "Annie_expressive6_public"},
+    "voice": {"voice_id": "voice_id", "input_text": "Let me show you how this works..."},
+    "background": {
+        "type": "video",
+        "video_asset_id": vid_result.asset_id,
+        "play_style": "fit_to_scene"
+    }
+}]
+
 await videos(
     action="generate",
-    avatar_id="Annie_expressive6_public",
-    voice_id="voice_id",
-    input_text="Let me show you how this works...",
-    title="Tutorial Video",
-    background_type="video",
-    background_video_asset_id=vid_result.asset_id,
-    background_play_style="fit_to_scene"
+    video_inputs_json=json.dumps(scenes),
+    title="Tutorial Video"
 )
 ```
 
@@ -160,7 +185,8 @@ from heygen_mcp import get_api_client
 
 async def create_tutorial_video():
     """Create a tutorial video with screen recording and avatar overlay."""
-    
+    import json
+
     # Step 1: Upload screen recording
     print("Uploading screen recording...")
     asset_result = await assets(
@@ -169,39 +195,47 @@ async def create_tutorial_video():
     )
     screen_recording_id = asset_result.asset_id
     print(f"Screen recording uploaded: {screen_recording_id}")
-    
+
     # Step 2: Generate video with avatar overlay
     print("Generating video with avatar overlay...")
+    scenes = [{
+        "character": {"avatar_id": "Annie_expressive6_public"},
+        "voice": {
+            "voice_id": "6fa2fa767bf148fc939c0bbba7306760",
+            "input_text": (
+                "Welcome to this Excel tutorial. "
+                "Today I'll show you how to create pivot tables "
+                "to analyze your data effectively."
+            )
+        },
+        "background": {
+            "type": "video",
+            "video_asset_id": screen_recording_id,
+            "play_style": "fit_to_scene"
+        }
+    }]
+
     video_result = await videos(
         action="generate",
-        avatar_id="Annie_expressive6_public",
-        voice_id="6fa2fa767bf148fc939c0bbba7306760",
-        input_text=(
-            "Welcome to this Excel tutorial. "
-            "Today I'll show you how to create pivot tables "
-            "to analyze your data effectively."
-        ),
-        title="Excel Tutorial - Pivot Tables",
-        background_type="video",
-        background_video_asset_id=screen_recording_id,
-        background_play_style="fit_to_scene"
+        video_inputs_json=json.dumps(scenes),
+        title="Excel Tutorial - Pivot Tables"
     )
     video_id = video_result.video_id
     print(f"Video generation started: {video_id}")
-    
+
     # Step 3: Poll for completion
     print("Waiting for video to complete...")
     while True:
         status = await videos(action="status", video_id=video_id)
         print(f"Status: {status.status}")
-        
+
         if status.status == "completed":
             print(f"Video completed: {status.video_url}")
             return status.video_url
         elif status.status == "failed":
             print(f"Video generation failed: {status.error_details}")
             return None
-        
+
         await asyncio.sleep(10)  # Check every 10 seconds
 
 # Run the workflow
@@ -215,15 +249,21 @@ video_url = asyncio.run(create_tutorial_video())
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `action` | string | Yes | Must be `"generate"` |
-| `avatar_id` | string | Yes | Avatar ID to use |
-| `voice_id` | string | Yes | Voice ID for narration |
-| `input_text` | string | Yes | Text for avatar to speak |
+| `video_inputs_json` | string | Yes | JSON array of scenes (see below) |
 | `title` | string | No | Video title |
-| `background_type` | string | No | Background type: `"color"`, `"image"`, or `"video"` |
-| `background_value` | string | No | Hex color (required for `type="color"`) |
-| `background_image_asset_id` | string | No | Image asset ID (required for `type="image"`) |
-| `background_video_asset_id` | string | No | Video asset ID (required for `type="video"`) |
-| `background_play_style` | string | No | Video playback style (default: `"fit_to_scene"`) |
+
+**Scene Object Structure (in video_inputs_json):**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `character.avatar_id` | string | Yes | Avatar ID to use |
+| `voice.voice_id` | string | Yes | Voice ID for narration |
+| `voice.input_text` | string | Yes | Text for avatar to speak |
+| `background.type` | string | No | `"color"`, `"image"`, or `"video"` |
+| `background.value` | string | No | Hex color (for type="color") |
+| `background.image_asset_id` | string | No | Image asset ID (for type="image") |
+| `background.video_asset_id` | string | No | Video asset ID (for type="video") |
+| `background.play_style` | string | No | Video playback style (default: `"fit_to_scene"`) |
 
 ## Tips and Best Practices
 
@@ -249,14 +289,17 @@ video_url = asyncio.run(create_tutorial_video())
 ### Error Handling
 
 ```python
+import json
+
 try:
+    scenes = [{
+        "character": {"avatar_id": "avatar_id"},
+        "voice": {"voice_id": "voice_id", "input_text": "text"},
+        "background": {"type": "video", "video_asset_id": "invalid_id"}
+    }]
     result = await videos(
         action="generate",
-        avatar_id="avatar_id",
-        voice_id="voice_id",
-        input_text="text",
-        background_type="video",
-        background_video_asset_id="invalid_id"
+        video_inputs_json=json.dumps(scenes)
     )
     if result.error:
         print(f"Error: {result.error}")
@@ -266,15 +309,20 @@ except Exception as e:
 
 ## Backward Compatibility
 
-The background parameters are **optional**. Existing code without backgrounds continues to work:
+The new `video_inputs_json` format supports all previous functionality:
 
 ```python
-# This still works (no background)
+import json
+
+# Simple video without background
+scenes = [{
+    "character": {"avatar_id": "Annie_expressive6_public"},
+    "voice": {"voice_id": "voice_id", "input_text": "Hello world"}
+}]
+
 await videos(
     action="generate",
-    avatar_id="Annie_expressive6_public",
-    voice_id="voice_id",
-    input_text="Hello world"
+    video_inputs_json=json.dumps(scenes)
 )
 ```
 

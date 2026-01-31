@@ -169,29 +169,66 @@ class TestVideosTool:
 
     @pytest.mark.asyncio
     async def test_videos_generate_action_missing_params(self):
-        """Test videos(action='generate') without required params returns error."""
+        """Test videos(action='generate') without video_inputs_json returns error."""
         result = await videos(action="generate")
 
         assert result.error is not None
-        assert "avatar_id is required" in result.error
+        assert "video_inputs_json is required" in result.error
 
     @pytest.mark.asyncio
-    async def test_videos_generate_action_missing_text(self):
-        """Test videos(action='generate') without input_text returns error."""
-        result = await videos(action="generate", avatar_id="test-avatar")
+    async def test_videos_generate_action_invalid_json(self):
+        """Test videos(action='generate') with invalid JSON returns error."""
+        result = await videos(action="generate", video_inputs_json="not valid json")
 
         assert result.error is not None
-        assert "input_text is required" in result.error
+        assert "Invalid JSON" in result.error
 
     @pytest.mark.asyncio
-    async def test_videos_generate_action_missing_voice(self):
-        """Test videos(action='generate') without voice_id returns error."""
+    async def test_videos_generate_action_empty_array(self):
+        """Test videos(action='generate') with empty array returns error."""
+        result = await videos(action="generate", video_inputs_json="[]")
+
+        assert result.error is not None
+        assert "at least one scene" in result.error
+
+    @pytest.mark.asyncio
+    async def test_videos_generate_action_missing_avatar(self):
+        """Test videos(action='generate') without avatar_id in scene returns error."""
         result = await videos(
-            action="generate", avatar_id="test-avatar", input_text="Hello"
+            action="generate",
+            video_inputs_json='[{"voice": {"input_text": "Hello", "voice_id": "v1"}}]',
         )
 
         assert result.error is not None
-        assert "voice_id is required" in result.error
+        assert "character.avatar_id is required" in result.error
+
+    @pytest.mark.asyncio
+    async def test_videos_generate_action_missing_voice_text(self):
+        """Test videos(action='generate') without input_text in scene returns error."""
+        json_input = (
+            '[{"character": {"avatar_id": "a1"}, ' '"voice": {"voice_id": "v1"}}]'
+        )
+        result = await videos(
+            action="generate",
+            video_inputs_json=json_input,
+        )
+
+        assert result.error is not None
+        assert "voice.input_text is required" in result.error
+
+    @pytest.mark.asyncio
+    async def test_videos_generate_action_missing_voice_id(self):
+        """Test videos(action='generate') without voice_id in scene returns error."""
+        json_input = (
+            '[{"character": {"avatar_id": "a1"}, ' '"voice": {"input_text": "Hello"}}]'
+        )
+        result = await videos(
+            action="generate",
+            video_inputs_json=json_input,
+        )
+
+        assert result.error is not None
+        assert "voice.voice_id is required" in result.error
 
     @pytest.mark.asyncio
     async def test_videos_generate_iv_action_missing_image_key(self):
