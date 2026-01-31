@@ -219,7 +219,7 @@ The server provides 7 resource-based tools, each with multiple actions:
 | Action | Parameters | Description |
 |--------|------------|-------------|
 | `list` | `token` (optional) | List all videos with pagination |
-| `generate` | `avatar_id`, `input_text`, `voice_id`, `title` (optional), background options | Create a new avatar video |
+| `generate` | `video_inputs_json` (JSON array of scenes), `title` (optional) | Create a new avatar video |
 | `generate_iv` | `image_key`, `script`, `voice_id`, `video_title`, motion options | Create Avatar IV video from photo |
 | `status` | `video_id` | Check video processing status |
 
@@ -261,8 +261,8 @@ avatars(action="list")
 # Get specific avatar details
 avatars(action="get", avatar_id="avatar_123")
 
-# Generate a video
-videos(action="generate", avatar_id="...", input_text="Hello!", voice_id="...")
+# Generate a video (single scene)
+videos(action="generate", video_inputs_json='[{"character": {"avatar_id": "..."}, "voice": {"voice_id": "...", "input_text": "Hello!"}}]')
 ```
 
 ## Development

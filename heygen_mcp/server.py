@@ -68,7 +68,7 @@ This server enables AI-powered video generation using HeyGen's platform.
    - Use `user(action='credits')` to check remaining credits
 
 2. **Generate Video** (choose one approach):
-   - **From scratch**: Use `videos(action='generate')` with avatar_id, voice_id, and input_text
+   - **From scratch**: Use `videos(action='generate')` with video_inputs_json (JSON array of scenes with avatar_id, voice_id, input_text per scene)
    - **From template**: Use `templates(action='list')`, then `templates(action='get')` to see variables, then `templates(action='generate')`
    - **From photo (Avatar IV)**: Upload photo with `assets(action='upload')`, then use `videos(action='generate_iv')`
 
@@ -262,8 +262,9 @@ async def avatars(
         "4) Poll 'status' until complete. "
         "Actions: "
         "'list' - get all videos (with status and video_url if complete); "
-        "'generate' - create video (REQUIRED: avatar_id, input_text, voice_id; "
-        "OPTIONAL: title, background_type, background_value); "
+        "'generate' - create video (REQUIRED: video_inputs_json - JSON array of scenes, "
+        "even for single-scene videos. Each scene needs: character.avatar_id, "
+        "voice.input_text, voice.voice_id. Optional: background with type/value/asset_id); "
         "'generate_iv' - create video from photo with AI motion "
         "(REQUIRED: image_key, script, voice_id, video_title); "
         "'status' - check if ready (REQUIRED: video_id). "
@@ -273,22 +274,16 @@ async def avatars(
 async def videos(
     action: Literal["list", "generate", "generate_iv", "status"],
     video_id: str | None = None,
-    avatar_id: str | None = None,
-    input_text: str | None = None,
-    voice_id: str | None = None,
     title: str = "",
     # Pagination parameter
     token: str | None = None,
-    # Background parameters
-    background_type: str | None = None,
-    background_value: str | None = None,
-    background_image_asset_id: str | None = None,
-    background_video_asset_id: str | None = None,
-    background_play_style: str | None = None,
+    # Video inputs (JSON array of scenes - REQUIRED for generate)
+    video_inputs_json: str | None = None,
     # Avatar IV specific parameters
     image_key: str | None = None,
     script: str | None = None,
     video_title: str | None = None,
+    voice_id: str | None = None,
     audio_url: str | None = None,
     audio_asset_id: str | None = None,
     custom_motion_prompt: str | None = None,
@@ -300,7 +295,7 @@ async def videos(
     | MCPAvatarIVVideoResponse
 ):
     """Manage video generation and status."""
-    logger.info(f"videos action={action} video_id={video_id} avatar_id={avatar_id}")
+    logger.info(f"videos action={action} video_id={video_id}")
     try:
         client = await get_api_client()
 
@@ -308,78 +303,116 @@ async def videos(
             return await client.list_videos(token=token)
 
         elif action == "generate":
-            if not avatar_id:
+            if not video_inputs_json:
                 return MCPVideoGenerateResponse(
-                    error="avatar_id is required for 'generate' action"
-                )
-            if not input_text:
-                return MCPVideoGenerateResponse(
-                    error="input_text is required for 'generate' action"
-                )
-            if not voice_id:
-                return MCPVideoGenerateResponse(
-                    error="voice_id is required for 'generate' action"
+                    error="video_inputs_json is required for 'generate' action. "
+                    "Provide a JSON array of scenes, e.g.: "
+                    '[{"character": {"avatar_id": "..."}, '
+                    '"voice": {"voice_id": "...", "input_text": "..."}}]'
                 )
 
-            # Build background object if background_type is provided
-            background = None
-            if background_type:
-                if background_type == "color":
-                    if not background_value:
-                        return MCPVideoGenerateResponse(
-                            error="background_value required for color background"
-                        )
-                    background = Background(
-                        type="color",
-                        value=background_value,
-                        url=None,
-                        image_asset_id=None,
-                        video_asset_id=None,
-                        play_style=None,
-                    )
-                elif background_type == "image":
-                    if not background_image_asset_id:
-                        return MCPVideoGenerateResponse(
-                            error="background_image_asset_id required for image"
-                        )
-                    background = Background(
-                        type="image",
-                        value=None,
-                        url=None,
-                        image_asset_id=background_image_asset_id,
-                        video_asset_id=None,
-                        play_style=None,
-                    )
-                elif background_type == "video":
-                    if not background_video_asset_id:
-                        return MCPVideoGenerateResponse(
-                            error="background_video_asset_id required for video"
-                        )
-                    background = Background(
-                        type="video",
-                        value=None,
-                        url=None,
-                        image_asset_id=None,
-                        video_asset_id=background_video_asset_id,
-                        play_style=background_play_style or "fit_to_scene",
-                    )
-                else:
+            import json
+
+            try:
+                scenes_data = json.loads(video_inputs_json)
+                if not isinstance(scenes_data, list):
                     return MCPVideoGenerateResponse(
-                        error=f"Invalid background_type: {background_type}"
+                        error="video_inputs_json must be a JSON array of scenes"
+                    )
+                if len(scenes_data) == 0:
+                    return MCPVideoGenerateResponse(
+                        error="video_inputs_json must contain at least one scene"
                     )
 
-            request = VideoGenerateRequest(
-                title=title,
-                video_inputs=[
-                    VideoInput(
-                        character=Character(avatar_id=avatar_id),
-                        voice=Voice(input_text=input_text, voice_id=voice_id),
-                        background=background,
+                video_inputs = []
+                for i, scene in enumerate(scenes_data):
+                    # Validate required fields per scene
+                    if "character" not in scene or "avatar_id" not in scene.get(
+                        "character", {}
+                    ):
+                        return MCPVideoGenerateResponse(
+                            error=f"Scene {i + 1}: character.avatar_id is required"
+                        )
+                    if "voice" not in scene or "input_text" not in scene.get(
+                        "voice", {}
+                    ):
+                        return MCPVideoGenerateResponse(
+                            error=f"Scene {i + 1}: voice.input_text is required"
+                        )
+                    if "voice_id" not in scene.get("voice", {}):
+                        return MCPVideoGenerateResponse(
+                            error=f"Scene {i + 1}: voice.voice_id is required"
+                        )
+
+                    # Build Character
+                    char_data = scene["character"]
+                    character = Character(
+                        avatar_id=char_data["avatar_id"],
+                        type=char_data.get("type", "avatar"),
+                        avatar_style=char_data.get("avatar_style", "normal"),
+                        scale=char_data.get("scale", 1.0),
                     )
-                ],
-                dimension=Dimension(width=1280, height=720),
-            )
-            return await client.generate_avatar_video(request)
+
+                    # Build Voice
+                    voice_data = scene["voice"]
+                    voice = Voice(
+                        input_text=voice_data["input_text"],
+                        voice_id=voice_data["voice_id"],
+                        type=voice_data.get("type", "text"),
+                    )
+
+                    # Build Background (optional)
+                    background = None
+                    if "background" in scene:
+                        bg_data = scene["background"]
+                        bg_type = bg_data.get("type")
+                        if bg_type == "color":
+                            background = Background(
+                                type="color",
+                                value=bg_data.get("value"),
+                                url=None,
+                                image_asset_id=None,
+                                video_asset_id=None,
+                                play_style=None,
+                            )
+                        elif bg_type == "image":
+                            background = Background(
+                                type="image",
+                                value=None,
+                                url=bg_data.get("url"),
+                                image_asset_id=bg_data.get("image_asset_id"),
+                                video_asset_id=None,
+                                play_style=None,
+                            )
+                        elif bg_type == "video":
+                            background = Background(
+                                type="video",
+                                value=None,
+                                url=bg_data.get("url"),
+                                image_asset_id=None,
+                                video_asset_id=bg_data.get("video_asset_id"),
+                                play_style=bg_data.get("play_style", "fit_to_scene"),
+                            )
+
+                    video_inputs.append(
+                        VideoInput(
+                            character=character,
+                            voice=voice,
+                            background=background,
+                        )
+                    )
+
+                request = VideoGenerateRequest(
+                    title=title,
+                    video_inputs=video_inputs,
+                    dimension=Dimension(width=1280, height=720),
+                )
+                return await client.generate_avatar_video(request)
+
+            except json.JSONDecodeError as e:
+                return MCPVideoGenerateResponse(
+                    error=f"Invalid JSON in video_inputs_json: {e}"
+                )
 
         elif action == "generate_iv":
             if not image_key:
